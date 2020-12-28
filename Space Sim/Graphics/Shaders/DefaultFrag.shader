@@ -1,10 +1,14 @@
 ﻿#version 450 core
 
-in vec4 VertColour;
-in vec2 UV;
-out vec4 FragColour;
+in vec4 FragColour;
+in vec2 FragUV;
+
+layout(location = 5) uniform sampler2D Texture;
+
+out vec4 Colour;
 
 void main(void)
 {
-	FragColour = VertColour;
+
+	Colour = texture(Texture, FragUV) * FragColour;
 }
