@@ -31,25 +31,29 @@ using System.Drawing;
 * Blending - overlapping pixels are blended into 1
 *                      V
 * Frame Buffer - loads 2d image into frame buffer
+* 
+* 
+* 
+* 
+* A Handle is a pointer for openGL. I think.
 */
 namespace Graphics
 {
     class RenderObject<Vertex> : Node2D where Vertex : unmanaged
     {
-
+        // an ints to identify Texture in OpenGL(pointer???)
         private readonly int VertexArrayHandle;
         private readonly int VertexBufferHandle;
-        private readonly int VertexCount;
-        private readonly int TextureHandle;
+        private readonly int TextureHandle; 
         private readonly int ProgramHandle;
 
-        private readonly int VertexSize;
-
-        
-
+        private readonly int VertexCount; // number of vertices
+        private readonly int VertexSize; // size of vertex in bytes
+        private int VertexLength; // number of data points in vertex
 
         //public int Z_index; decides which goes in front
-        //public matrix4 PerpectiveMatrix; need different types could also create constants for 3d, orthographics and 2d
+
+        // still assumes a 2D render object in constructor
         public RenderObject(float Rotation, Vector2 Scale, Vector2 Position, Vertex[] Vertices) : base(Rotation, Scale, Position)
         {
             this.VertexCount = Vertices.Length;
@@ -63,7 +67,13 @@ namespace Graphics
             TextureHandle = Init_Textures("Planet");
             ProgramHandle = Init_Program("Default", "Default");
 
-            
+            // fixes texture at edges
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
+
+            // makes pixel perfect
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
         }
         public RenderObject(float Rotation, float ScaleX, float ScaleY, float PositionX, float PositionY, Vertex[] Vertices) : base(Rotation, new Vector2(ScaleX, ScaleY), new Vector2(PositionX, PositionY))
         {
@@ -73,9 +83,15 @@ namespace Graphics
 
             TextureHandle = Init_Textures("Planet");
             ProgramHandle = Init_Program("Default", "Default");
+            
+            // fixes texture at edges
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
 
+            // makes pixel perfect
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
         }
-
 
         private void LoadBufferAttribute(int ArrayHandle, int Size, int Index, ref int Offset)
         {
@@ -85,13 +101,13 @@ namespace Graphics
             GL.VertexArrayAttribFormat(ArrayHandle, Index, Size, VertexAttribType.Float, false, Offset);
             Offset += Size * 4; // number of elements * float size 
         }
-
         private void Init_BufferArray(out int ArrayHandle, out int BufferHandle, out int VertexSize, Vertex[] Vertices)
         {
             /* struct needs to be 'unmanaged' to use sizeof()
              * dont really know what that means but whatever
              * its also unsafe meaning it could potential have different results on different systems
-             * it should be fine as long as the vertex doesnt contain strings or characters
+             * it should be fine as long as the vertex doesnt contain strings or characters. 
+             * float and ints are relatively safe.
              */
             unsafe { VertexSize = sizeof(Vertex); }
             
@@ -111,7 +127,8 @@ namespace Graphics
              */
             FieldInfo[] FieldInfoArray = typeof(Vertex).GetFields();
             int RelativeOffset = 0;
-            for (int i = 0; i < FieldInfoArray.Length; i++)
+            VertexLength = FieldInfoArray.Length;
+            for (int i = 0; i < VertexLength; i++)
             {
                 Type T = FieldInfoArray[i].FieldType;
 
@@ -121,14 +138,12 @@ namespace Graphics
                 else if (T == typeof(Color4)) LoadBufferAttribute(ArrayHandle, 4, i, ref RelativeOffset);
                 else if (T == typeof(float)) LoadBufferAttribute(ArrayHandle, 1, i, ref RelativeOffset);
                 else if (T == typeof(Int32)) LoadBufferAttribute(ArrayHandle, 1, i, ref RelativeOffset);
-                else throw new Exception("RenderObject cannot load type " + T.ToString() + " into buffer reliably"); // shouldnt be needed as its already unmanaged
+                else throw new Exception("RenderObject cannot load type " + T.ToString() + " into buffer reliably"); // shouldnt be needed as its already known that its unmanaged
 
             }
             // link the vertex array and buffer and provide the step size(stride) as size of Vertex
             GL.VertexArrayVertexBuffer(ArrayHandle, 0, BufferHandle, IntPtr.Zero, VertexSize);
         }
-
-
 
         private int Init_Program(string VertName, string FragName)
         {
@@ -221,25 +236,21 @@ namespace Graphics
 
             return Serialized_Data;
         }
-        
-        public virtual void Process(float delta) 
-        {
-            Rotation += delta;
-        }
-        public void Render(Node2D Camera) 
+
+        public void Render(Node2D Camera, float Time)
         {
             GL.UseProgram(ProgramHandle);
 
             // pass in renderobject transform matrix
-            
+
             /* Problem Problem Problem
              * needs to change Node depending on whether its 3d or 2d
              * Will keep as matrix 4 and ignore the 3d values when 2d
              * Also Perspective Matrix???
              */
-            GL.UniformMatrix3(3, true, ref Transform_Matrix);
-            GL.UniformMatrix3(4, true, ref Camera.Transform_Matrix);
-
+            GL.UniformMatrix3(VertexLength, true, ref Transform_Matrix);
+            GL.UniformMatrix3(VertexLength + 1, true, ref Camera.Transform_Matrix);
+            GL.Uniform1(VertexLength + 2, Time);
             /* https://opentk.net/learn/chapter1/6-multiple-textures.html
              * Sampler2D variable is uniform but isn't assigned the same way
              * this is assigned a location value with a texture sampler 
@@ -253,9 +264,10 @@ namespace Graphics
              * idk its weird openGL stuff. 
              */
 
-            GL.BindTextures(0, 1, new int[1]{TextureHandle}); 
+            GL.BindTextures(0, 1, new int[1] { TextureHandle });
             GL.BindVertexArray(VertexArrayHandle);
             GL.DrawArrays(PrimitiveType.Triangles, 0, VertexCount);
         }
+        public virtual void Process(float delta) { }
     }
 }

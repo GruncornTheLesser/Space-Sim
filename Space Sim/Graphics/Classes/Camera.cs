@@ -7,59 +7,91 @@ namespace Graphics
 {
     sealed class Camera2D : Node2D
     {
-        private readonly Vector2 BaseScale;
+
+        /* ZoomID is the last ID of the change in zoom.
+         * The only reason for it not to match is if a newer call exists.
+         * 
+         * The camera will zoom by "zoomrate" for "zoomtime" since the last change in "zoomlevel" to change zoom
+         * If the ZoomTo is called twice then it zooms at double speed.
+         * 
+         * If "zoom" = 1, "scale" = "basescale".
+         */
+        private Vector2 basescale; // used when changing window size
         private float zoom;
-        private int zoomlevel;
-        public int ZoomID = 0;
+        private int zoomlevel; 
+        private int zoomID;
+
+        private Vector2 windowsize; // dont really want to store this -> needed for ScreenToWorld()
+        private readonly float windowunit; // nor this
+
+        private readonly int zoomtime;
+        private readonly float zoomrate;
+
+        private Vector2 dragstart;
+        private bool drag;
+
         public float Zoom
         {
             set
             {
                 zoom = value;
-                Scale = BaseScale * zoom;
+                Scale = basescale * zoom;
             }
             get
             {
                 return zoom;
             }
-        }
-        public int ZoomLevel
+        } // this might be pointless. its kinda messy.
+        /// <summary>
+        /// A Camera using a matrix3x3 to control position, zoom and inputs.
+        /// </summary>
+        /// <param name="WindowSize"> The Size of the window.</param>
+        /// <param name="WindowUnit">The size 1 pixel represents.</param>
+        /// <param name="ZoomTime">The length of time camera will zoom.</param>
+        /// <param name="ZoomRate">The rate at which the camera scales during zoom.</param>
+        public Camera2D(Vector2 WindowSize, float WindowUnit, int ZoomTime, float ZoomRate) : base(0, 1f / WindowSize.X / WindowUnit, (1f / WindowSize.Y / WindowUnit) * (WindowSize.Y / WindowSize.X), 0, 0)
         {
-            set
-            {
-                ZoomID++;
-                if (MathF.Abs(value) < MathF.Abs(zoomlevel))
-                {
-                    zoomlevel = 0;
-                }
-                else
-                {
-                    zoomlevel = value;
-                    int localID = ZoomID;
-                    Task.Delay(1000).ContinueWith(t => ResetZoom(localID)); // after 1000ms(1 sec) reset zooming
-                }
-            }
-            get 
-            { 
-                return zoomlevel; 
-            }
-        }
-
-        public Camera2D(Vector2 WindowSize, float WindowUnit) : base(0, 1f / WindowSize.X / WindowUnit, 1f / WindowSize.Y / WindowUnit, 0, 0)
-        {
-            zoom = 1;
+            zoomID = 0;
             zoomlevel = 0;
-            BaseScale = Scale;
+            zoom = 1;
+            
+            windowunit = WindowUnit;
+            windowsize = WindowSize;
+
+            zoomrate = ZoomRate;
+            zoomtime = ZoomTime;
+            
+            basescale = Scale;
         }
+        
         private void ResetZoom(int ID) 
         {
-            if (ZoomID == ID) zoomlevel = 0;// -= Math.Sign(zoomlevel);
-            
+            if (zoomID == ID) zoomlevel = 0;
         }
-        public void ProcessZoom(float delta) => Zoom *= MathF.Pow(MathF.Pow(0.5f, zoomlevel), delta); // decrease by half the size in 1 second
+        public void ZoomTo(Vector2 Position, int Delta) 
+        {
+            zoomID++;
+            if (zoomlevel != 0 && MathF.Sign(Delta) != MathF.Sign(zoomlevel)) // abrupt zoom stop
+            {
+                ResetZoom(zoomID);
+            }
+            else
+            {
+                zoomlevel += Delta;
+                int localID = zoomID; // needs to be local here not when ResetZoom is called
+                Task.Delay(zoomtime).ContinueWith(t => ResetZoom(localID)); // after zoomtime( in ms) stops zooming if local ID matches zoom ID
+            }
+        }
+        public void UpdateWindowSize(Vector2 WindowSize)
+        {
+            windowsize = WindowSize;
+            basescale = new Vector2(zoom / windowsize.X / windowunit, (zoom / windowsize.Y / windowunit));
+        }
         public void Process(float delta)
         {
-            ProcessZoom(delta);
+            Zoom *= MathF.Pow(MathF.Pow(zoomrate, zoomlevel), delta); // decrease by zoomrate the size in zoomtime second
         }
+
+        public Vector2 ScreenToWorld(Vector2 Pos) => Position + new Vector2(((2 * Pos.X / windowsize.X) - 1) / Scale.X,((2 * Pos.Y / windowsize.Y) - 1) / Scale.Y);
     }
 }

@@ -7,7 +7,6 @@ layout(location = 2) in vec4 VertColour;
 layout(location = 3) uniform mat3 transform;
 layout(location = 4) uniform mat3 camera;
 
-
 out vec4 FragColour;
 out vec2 FragUV;
 

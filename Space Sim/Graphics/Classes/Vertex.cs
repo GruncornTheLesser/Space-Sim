@@ -24,6 +24,7 @@ namespace Graphics
             this.Colour = new Color4(R, G, B, A);
         }
     }
+    
     struct Vertex3D
     {
         private Vector3 Position; // 3 floats = 12 bytes

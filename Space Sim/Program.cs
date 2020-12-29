@@ -13,7 +13,10 @@ namespace Space_Sim
        
         static void Main()
         {
-            using (Window Sim = new Window(GameWindowSettings.Default, NativeWindowSettings.Default))
+            var GWS = new GameWindowSettings();
+            var NWS = new NativeWindowSettings();
+            NWS.Size = new OpenTK.Mathematics.Vector2i(800, 800);
+            using (Window Sim = new Window(GWS, NWS))
             {
                 Sim.Run();
             }
