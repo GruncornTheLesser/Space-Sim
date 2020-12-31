@@ -26,14 +26,13 @@ namespace Graphics
         public Window(GameWindowSettings GWS, NativeWindowSettings NWS) : base(GWS, NWS)
         {
             RenderObjects = new List<RenderObject<Vertex2D>>();
-            Camera = new Camera2D(NWS.Size, 1, 200, 0.5f);
+            Camera = new Camera2D(NWS.Size, 1, 300, 0.5f);
             GL.ClearColor(RefreshCol);
             this.VSync = VSyncMode.On;
         }
 
         protected override void OnResize(ResizeEventArgs e)
         {
-            
             GL.Viewport(0, 0, e.Size.X, e.Size.Y);
             Camera.UpdateWindowSize(e.Size);
             base.OnResize(e);

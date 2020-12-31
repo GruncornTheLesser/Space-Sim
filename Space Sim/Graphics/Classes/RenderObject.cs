@@ -31,17 +31,14 @@ using System.Drawing;
 * Blending - overlapping pixels are blended into 1
 *                      V
 * Frame Buffer - loads 2d image into frame buffer
-* 
-* 
-* 
-* 
-* A Handle is a pointer for openGL. I think.
+* ==================RETURN===================
+[X] means not doing it
+* A Handle is a pointer for openGL. I think. it points to a location in memory. I dont really deal with it tho. I use it to hold pieces of info in OpenGL
 */
 namespace Graphics
 {
     class RenderObject<Vertex> : Node2D where Vertex : unmanaged
     {
-        // an ints to identify Texture in OpenGL(pointer???)
         private readonly int VertexArrayHandle;
         private readonly int VertexBufferHandle;
         private readonly int TextureHandle; 
@@ -51,7 +48,8 @@ namespace Graphics
         private readonly int VertexSize; // size of vertex in bytes
         private int VertexLength; // number of data points in vertex
 
-        //public int Z_index; decides which goes in front
+        // THING TO DO:
+        //public int Z_index; to decide which goes in front
 
         // still assumes a 2D render object in constructor
         public RenderObject(float Rotation, Vector2 Scale, Vector2 Position, Vertex[] Vertices) : base(Rotation, Scale, Position)
@@ -64,7 +62,7 @@ namespace Graphics
              * Parameters needs to passing from constructor
              * Planets and default will change
              */
-            TextureHandle = Init_Textures("Planet");
+            TextureHandle = Init_Textures("5 jupiter SS"); // jupiter spritesheet
             ProgramHandle = Init_Program("Default", "Default");
 
             // fixes texture at edges
@@ -175,6 +173,12 @@ namespace Graphics
         }
         private int Load_Shader(ShaderType type, string path)
         {
+            // THING TO DO:
+            // should write in and out variables in code automatically by whats in the vertex
+            // or just find a better way to do it. this works as long as i dont need any new parameters in the shader.
+            // could create a shader object which holds the parameters of the vertex and uniforms that need to be passed.
+
+
             // create new shader object in OpenGL
             int NewShaderHandle = GL.CreateShader(type);
 
@@ -246,11 +250,13 @@ namespace Graphics
             /* Problem Problem Problem
              * needs to change Node depending on whether its 3d or 2d
              * Will keep as matrix 4 and ignore the 3d values when 2d
-             * Also Perspective Matrix???
+             * Also Perspective Matrix??? nah
              */
-            GL.UniformMatrix3(VertexLength, true, ref Transform_Matrix);
-            GL.UniformMatrix3(VertexLength + 1, true, ref Camera.Transform_Matrix);
-            GL.Uniform1(VertexLength + 2, Time);
+
+            GL.UniformMatrix3(VertexLength, true, ref Transform_Matrix); // 3
+            GL.UniformMatrix3(VertexLength + 1, true, ref Camera.Transform_Matrix); // 4
+            GL.Uniform1(VertexLength + 2, Time); // 5
+            GL.Uniform1(VertexLength + 3, 60f);
             /* https://opentk.net/learn/chapter1/6-multiple-textures.html
              * Sampler2D variable is uniform but isn't assigned the same way
              * this is assigned a location value with a texture sampler 

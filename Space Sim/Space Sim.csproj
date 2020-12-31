@@ -206,6 +206,9 @@
     <None Update="Graphics\Textures\1 Mercury\9.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Graphics\Textures\5 jupiter SS.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Graphics\Textures\Planet.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

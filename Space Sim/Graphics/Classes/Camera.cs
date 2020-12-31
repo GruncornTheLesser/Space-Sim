@@ -21,7 +21,7 @@ namespace Graphics
         private int zoomlevel; 
         private int zoomID;
 
-        private Vector2 windowsize; // dont really want to store this -> needed for ScreenToWorld()
+        private Vector2 windowsize; // dont really want stored this -> needed for ScreenToWorld()
         private readonly float windowunit; // nor this
 
         private readonly int zoomtime;
@@ -89,9 +89,10 @@ namespace Graphics
         }
         public void Process(float delta)
         {
-            Zoom *= MathF.Pow(MathF.Pow(zoomrate, zoomlevel), delta); // decrease by zoomrate the size in zoomtime second
+            Zoom *= MathF.Pow(MathF.Pow(zoomrate, zoomlevel), delta); // decrease by zoomrate in zoomtime
         }
 
-        public Vector2 ScreenToWorld(Vector2 Pos) => Position + new Vector2(((2 * Pos.X / windowsize.X) - 1) / Scale.X,((2 * Pos.Y / windowsize.Y) - 1) / Scale.Y);
+        // could move this to window - then dont need to store window size twice
+        public Vector2 ScreenToWorld(Vector2 Pos) => Position + new Vector2(((2 * Pos.X / windowsize.X) - 1) / Scale.X, ((2 * Pos.Y / windowsize.Y) - 1) / Scale.Y);
     }
 }

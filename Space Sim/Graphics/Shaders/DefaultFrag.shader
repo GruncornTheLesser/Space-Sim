@@ -3,7 +3,7 @@
 in vec4 FragColour;
 in vec2 FragUV;
 
-layout(location = 5) uniform sampler2D Texture;
+uniform sampler2D Texture;
 
 out vec4 Colour;
 
