@@ -4,14 +4,13 @@ using System.Drawing;
 namespace Maths
 {
     /*
-     * could have been done with the OpenGL library but i wasnt sure how it worked. 
-     * This way I can inherit from the matrix and be sure its doing what I want.
-     * Means I must add explicit operator to parse to OpenGL library variables. or any other library I want to use.
+     * The purpose of this namespace was to deal with matrix calculations. The reason I didnt want to use OpenGL.Mathematics was in certain scenarios it 
+     * doesnt work how expected. for example it doesnt always allow matrix multiplication and theyre all sealed classes meaning I cant inherit from them.
      * 
-     * Because of the way openTK is set up it needs reference variables so I've decided to scrap this namespace
+     * Because of the way openTK is set up it needs reference variables so I decided to scrap this namespace.
      * Ive replaced the Node2D transform matrix with a new transform matrix which holds all the same variables and data but also a matrix variable.
-     * Inheriting from this would have been much more convenient as but what ever.
      * 
+     * It is quite satisfying setting something like this up but its stupid if there is something already available.
      */
     struct Vector2
     {
@@ -222,8 +221,6 @@ namespace Maths
                 );
         }   
     }
-    
-    
     
     /// <summary>
     /// 2d transformation represented with a 3x3 matrix. Includes variables for scale translation and rotation.

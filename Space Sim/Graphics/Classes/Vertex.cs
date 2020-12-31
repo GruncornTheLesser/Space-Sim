@@ -4,6 +4,13 @@ using System.Text;
 using OpenTK.Mathematics;
 namespace Graphics
 {
+    /* Ive tried to set it up so the program can use both 3d and 2d.
+     * 
+     * This means instead of having seperate objects you pass in the 
+     * custom vertex you want to use and write a corresponding shader.
+     * 
+     * This means that the shaders are written for a particular type vertex.
+     */
     struct Vertex2D
     {
         public Vector2 Position; // 2 floats = 8 bytes

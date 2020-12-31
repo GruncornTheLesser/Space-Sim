@@ -2,7 +2,6 @@
 
 const int Frames = 60;
 
-
 layout(location = 0) in vec2 VertUV;
 layout(location = 1) in vec2 TextureUV;
 layout(location = 2) in vec4 VertColour;
@@ -19,5 +18,7 @@ void main(void)
 {
 	gl_Position = vec4((camera * transform * vec3(VertUV, 1)).xy, 0, 1); // ignore 3d Z axis
 	FragColour = VertColour;
+
+	// ignore 3d Z axis could do this with 3d axis and remove the need for huge textures
 	FragUV = vec2((TextureUV.x / Frames) + (1.0 / Frames) * (int(round(Time * FrameRate)) % Frames), TextureUV.y);
 }

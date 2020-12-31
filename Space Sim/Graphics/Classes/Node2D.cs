@@ -7,7 +7,6 @@ namespace Graphics
 {
     class Node2D
     {
-        // this could be improved if i wasnt using OpenTK.mathematics
         public Matrix3 Transform_Matrix;
         private float rotation;
         private Vector2 scale;
@@ -92,14 +91,18 @@ namespace Graphics
         private Vector3 scale;
         private Vector3 position;
 
-        //public Vector3 Rotation { }
-        //public Vector3 Scale { }
-        //public Vector3 Position { }
+        public Vector3 Rotation3D { set; get; }
+        public Vector3 Scale3D { set; get; }
+        public Vector3 Position3D { set; get; }
 
-        public Node3D(Vector3 rotation, Vector3 scale, Vector3 position) 
-        { 
-            
-        }
+        public Vector3 Rotation2D { set; get; }
+        public Vector3 Scale2D { set; get; }
+        public Vector3 Position2D { set; get; }
+
+        public Node3D(Vector3 rotation, Vector3 scale, Vector3 position) { }
         public Node3D(float rotationX, float rotationY, float rotationZ, float scaleX, float scaleY, float scaleZ, float positionX, float positionY, float positionZ) { }
+        
+        public Node3D(float rotation, Vector2 scale, Vector2 position) { }
+        public Node3D(float rotation, float scaleX, float scaleY, float positionX, float positionY) { }
     }
 }

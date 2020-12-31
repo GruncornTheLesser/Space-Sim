@@ -33,6 +33,7 @@ using System.Drawing;
 * Frame Buffer - loads 2d image into frame buffer
 * ==================RETURN===================
 [X] means not doing it
+[~]
 * A Handle is a pointer for openGL. I think. it points to a location in memory. I dont really deal with it tho. I use it to hold pieces of info in OpenGL
 */
 namespace Graphics
@@ -90,7 +91,14 @@ namespace Graphics
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
         }
-
+        
+        /// <summary>
+        /// recognises a new attribute in an array for passing to the buffer.
+        /// </summary>
+        /// <param name="ArrayHandle">The OpenGL Handle ID.</param>
+        /// <param name="Size">The number of elements contained in this attirbute.</param>
+        /// <param name="Index">The index when delivered to the shader.</param>
+        /// <param name="Offset">The relative offset in bytes of where the attribute starts.</param>
         private void LoadBufferAttribute(int ArrayHandle, int Size, int Index, ref int Offset)
         {
             GL.VertexArrayAttribBinding(ArrayHandle, Index, 0);
@@ -99,6 +107,14 @@ namespace Graphics
             GL.VertexArrayAttribFormat(ArrayHandle, Index, Size, VertexAttribType.Float, false, Offset);
             Offset += Size * 4; // number of elements * float size 
         }
+        
+        /// <summary>
+        /// Creates an array and buffer in openGl such that the data in the vertices can be unpacked.
+        /// </summary>
+        /// <param name="ArrayHandle">The OpenGL Handle ID for the array.</param>
+        /// <param name="BufferHandle">The OpenGL Handle ID for the buffer.</param>
+        /// <param name="VertexSize">The size of the vertex in bytes</param>
+        /// <param name="Vertices">The array of vertices.</param>
         private void Init_BufferArray(out int ArrayHandle, out int BufferHandle, out int VertexSize, Vertex[] Vertices)
         {
             /* struct needs to be 'unmanaged' to use sizeof()
@@ -143,6 +159,14 @@ namespace Graphics
             GL.VertexArrayVertexBuffer(ArrayHandle, 0, BufferHandle, IntPtr.Zero, VertexSize);
         }
 
+        
+        
+        /// <summary>
+        /// compiles and error-checks shaders and attaches them together in a program in OpenGL.
+        /// </summary>
+        /// <param name="VertName">The name of the vertex shader file in:@\Graphics\Shaders\[name].shader</param>
+        /// <param name="FragName">The name of the fragment shader file in:@\Graphics\Shaders\[name].shader</param>
+        /// <returns>The program handle ID for OpenGL.</returns>
         private int Init_Program(string VertName, string FragName)
         {
             // creates new program
@@ -171,6 +195,13 @@ namespace Graphics
 
             return Handle;
         }
+        
+        /// <summary>
+        /// Loads code in file and compiles it.
+        /// </summary>
+        /// <param name="type">the type of shader i.e. vertex or fragment</param>
+        /// <param name="path">The file path to the code.</param>
+        /// <returns>The shader handle ID for OpenGL.</returns>
         private int Load_Shader(ShaderType type, string path)
         {
             // THING TO DO:
@@ -198,14 +229,15 @@ namespace Graphics
             return NewShaderHandle;
         }
 
+
+
+        /// <summary>
+        /// opens image file and creates texture.
+        /// </summary>
+        /// <param name="name">The name of the texture file in: @Graphics/Textures/[name].png</param>
+        /// <returns>The texture handle ID for OpenGL.</returns>
         private int Init_Textures(string name)
         {
-            /* THING TO DO
-             * 
-             * Needs to load multiple textures
-             */
-
-
             int width, height, Handle;
             float[] data = Load_Texture(out width, out height, "Graphics/Textures/" + name + ".png");
             GL.CreateTextures(TextureTarget.Texture2D, 1, out Handle);
@@ -219,6 +251,14 @@ namespace Graphics
 
             return Handle;
         }
+        
+        /// <summary>
+        /// Serializes image read from file for openGl buffer. assigns values to width and height.
+        /// </summary>
+        /// <param name="width">The width of the image.</param>
+        /// <param name="height">The height of the image.</param>
+        /// <param name="path">The path to the image.</param>
+        /// <returns>The serialised data read from the file in rgba format.</returns>
         private float[] Load_Texture(out int width, out int height, string path)
         {
             Bitmap BMP = (Bitmap)Image.FromFile(path);
@@ -241,18 +281,19 @@ namespace Graphics
             return Serialized_Data;
         }
 
-        public void Render(Node2D Camera, float Time)
+
+
+        /// <summary>
+        /// Show This object on the screen.
+        /// </summary>
+        /// <param name="Camera">The Camera Matrix.</param>
+        /// <param name="Time"></param>
+        public void Render(Camera2D Camera, float Time)
         {
+            // tell openGL to use this objects program
             GL.UseProgram(ProgramHandle);
 
-            // pass in renderobject transform matrix
-
-            /* Problem Problem Problem
-             * needs to change Node depending on whether its 3d or 2d
-             * Will keep as matrix 4 and ignore the 3d values when 2d
-             * Also Perspective Matrix??? nah
-             */
-
+            // pass in uniforms
             GL.UniformMatrix3(VertexLength, true, ref Transform_Matrix); // 3
             GL.UniformMatrix3(VertexLength + 1, true, ref Camera.Transform_Matrix); // 4
             GL.Uniform1(VertexLength + 2, Time); // 5
@@ -270,10 +311,16 @@ namespace Graphics
              * idk its weird openGL stuff. 
              */
 
+            // pass in textures(sampler2D)
             GL.BindTextures(0, 1, new int[1] { TextureHandle });
             GL.BindVertexArray(VertexArrayHandle);
             GL.DrawArrays(PrimitiveType.Triangles, 0, VertexCount);
         }
+        
+        /// <summary>
+        /// Called on each frame update.
+        /// </summary>
+        /// <param name="delta">Time since process was last called.</param>
         public virtual void Process(float delta) { }
     }
 }

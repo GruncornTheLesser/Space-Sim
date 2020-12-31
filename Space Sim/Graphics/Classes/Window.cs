@@ -18,11 +18,11 @@ namespace Graphics
         public OpenTK.Mathematics.Color4 RefreshCol = new OpenTK.Mathematics.Color4(0.05f, 0.1f, 0.2f, 1.0f);
         List<RenderObject<Vertex2D>> RenderObjects;
         Camera2D Camera;
+        
+        
         // Shader Variables
         private float Time;
         
-        
-
         public Window(GameWindowSettings GWS, NativeWindowSettings NWS) : base(GWS, NWS)
         {
             RenderObjects = new List<RenderObject<Vertex2D>>();
@@ -62,7 +62,8 @@ namespace Graphics
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
         }
 
-        // remove later
+
+        // should remove later
         protected override void OnMouseWheel(MouseWheelEventArgs e)
         {
             if (MouseState.ScrollDelta.Y > 0)
@@ -78,7 +79,7 @@ namespace Graphics
         {
             Time += (float)e.Time;
             //Vsync: {VSync} FPS: {1f / e.Time:0} Time: {Time} 
-            Title = $"MousePos: {MousePosition} WorldPos:{Camera.ScreenToWorld(MousePosition)}";
+            Title = $"MousePos: {MousePosition} WorldPos:{ScreenToWorld(MousePosition)}";
             
             Camera.Process((float)e.Time);
             
@@ -95,6 +96,14 @@ namespace Graphics
             
             SwapBuffers();
         }
+
+
+        /// <summary>
+        /// Converts Screen space to world space.
+        /// </summary>
+        /// <param name="Pos">The pixel position to be found in the world</param>
+        /// <returns>The Position is in the world.</returns>
+        public Vector2 ScreenToWorld(Vector2 Pos) => Camera.Position + new Vector2(((2 * Pos.X / Size.X) - 1) / Camera.Scale.X, ((2 * Pos.Y / Size.Y) - 1) / Camera.Scale.Y);
     }
 }
 
