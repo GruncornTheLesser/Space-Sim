@@ -54,9 +54,6 @@ namespace Graphics
 
             CursorVisible = true;
 
-            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
-            GL.PatchParameter(PatchParameterInt.PatchVertices, 8);
-
             // allows blending ie semi transparent stuff
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
@@ -64,6 +61,15 @@ namespace Graphics
 
 
         // should remove later
+        protected override void OnMouseDown(MouseButtonEventArgs e)
+        {
+            if (e.Button == MouseButton.Button1) Camera.ToggleDrag(MousePosition);
+        }
+        protected override void OnMouseUp(MouseButtonEventArgs e)
+        {
+            Camera.ToggleDrag(MousePosition);
+        }
+
         protected override void OnMouseWheel(MouseWheelEventArgs e)
         {
             if (MouseState.ScrollDelta.Y > 0)
@@ -78,8 +84,8 @@ namespace Graphics
         protected override void OnRenderFrame(FrameEventArgs e)
         {
             Time += (float)e.Time;
-            //Vsync: {VSync} FPS: {1f / e.Time:0} Time: {Time} 
-            Title = $"MousePos: {MousePosition} WorldPos:{ScreenToWorld(MousePosition)}";
+            //Vsync: {VSync} FPS: {1f / e.Time:0} Time: {Time}
+            Title = $"MousePos: {MousePosition} WorldPos:{ScreenToWorld(MousePosition)}, Zoom: {Camera.Zoom}";
             
             Camera.Process((float)e.Time);
             
@@ -101,9 +107,9 @@ namespace Graphics
         /// <summary>
         /// Converts Screen space to world space.
         /// </summary>
-        /// <param name="Pos">The pixel position to be found in the world</param>
-        /// <returns>The Position is in the world.</returns>
-        public Vector2 ScreenToWorld(Vector2 Pos) => Camera.Position + new Vector2(((2 * Pos.X / Size.X) - 1) / Camera.Scale.X, ((2 * Pos.Y / Size.Y) - 1) / Camera.Scale.Y);
+        /// <param name="Pos">the pizel position on the screen.</param>
+        /// <returns>The position in the world space.</returns>
+        public Vector2 ScreenToWorld(Vector2 Pos) => Camera.Position + new Vector2(((2 * Pos.X / Size.X) - 1) / 2 / Camera.Scale.X, ((2 * Pos.Y / Size.Y) - 1) / 2 / Camera.Scale.Y);
     }
 }
 

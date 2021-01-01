@@ -33,8 +33,10 @@ using System.Drawing;
 * Frame Buffer - loads 2d image into frame buffer
 * ==================RETURN===================
 [X] means not doing it
-[~]
+[~] means its done automatically
 * A Handle is a pointer for openGL. I think. it points to a location in memory. I dont really deal with it tho. I use it to hold pieces of info in OpenGL
+* 
+* unmanged is any of the follwing types: Sbyte, byte, short, ushort, int, uint, long, ulong, char, float, double, decimal, or bool
 */
 namespace Graphics
 {
@@ -49,8 +51,11 @@ namespace Graphics
         private readonly int VertexSize; // size of vertex in bytes
         private int VertexLength; // number of data points in vertex
 
+        public PolygonMode PolygonMode = PolygonMode.Fill;
+
         // THING TO DO:
-        //public int Z_index; to decide which goes in front
+        // public int Z_index; to decide which goes in front.
+        // Mostly a change to window.
 
         // still assumes a 2D render object in constructor
         public RenderObject(float Rotation, Vector2 Scale, Vector2 Position, Vertex[] Vertices) : base(Rotation, Scale, Position)
@@ -63,7 +68,7 @@ namespace Graphics
              * Parameters needs to passing from constructor
              * Planets and default will change
              */
-            TextureHandle = Init_Textures("5 jupiter SS"); // jupiter spritesheet
+            TextureHandle = Init_Textures("3 Earth TS"); // jupiter spritesheet
             ProgramHandle = Init_Program("Default", "Default");
 
             // fixes texture at edges
@@ -120,8 +125,8 @@ namespace Graphics
             /* struct needs to be 'unmanaged' to use sizeof()
              * dont really know what that means but whatever
              * its also unsafe meaning it could potential have different results on different systems
-             * it should be fine as long as the vertex doesnt contain strings or characters. 
-             * float and ints are relatively safe.
+             * it should be fine as long as the vertex doesnt contain strings? and maybe not char?. 
+             * floats, ints and bytes are safe.
              */
             unsafe { VertexSize = sizeof(Vertex); }
             
@@ -290,6 +295,7 @@ namespace Graphics
         /// <param name="Time"></param>
         public void Render(Camera2D Camera, float Time)
         {
+            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode);
             // tell openGL to use this objects program
             GL.UseProgram(ProgramHandle);
 

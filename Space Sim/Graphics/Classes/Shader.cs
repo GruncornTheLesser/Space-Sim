@@ -5,21 +5,28 @@ using OpenTK.Graphics.OpenGL4;
 
 namespace Graphics.Shaders
 {
-    public enum ParameterTypeQualifier
+    /* Unfinished
+     * very much a thing to do.
+     * 
+     * The Idea is all the shader parameters are stored in a dictionary
+     * then the "parameters" class will generate the initial code for 
+     * the vertex and fragment shader.
+     */
+    public enum PTQ
     {
         Const,
         Uniform,
         Vertex
     }
 
-    class Parameters<Vertex> : Dictionary<string, Parameter>
+    class Parameters<Vertex> : List<Parameter>
     {
         private readonly int VertexArrayHandle;
         private readonly int VertexBufferHandle;
 
         private readonly int VertexCount; // number of vertices
         private readonly int VertexSize; // size of vertex in bytes
-        private int VertexLength; // number of data points in vertex
+        private readonly int VertexLength; // number of data points in vertex
 
         public Parameters() { }
         //private int Load_Shader(ShaderType type, string path) { }
@@ -29,10 +36,10 @@ namespace Graphics.Shaders
     struct Parameter
     {
         public string Name;
-        public ParameterTypeQualifier Type;
+        public PTQ Type;
         public Byte[] Value;
 
-        public Parameter(ParameterTypeQualifier type, string name, Byte[] value)
+        public Parameter(PTQ type, string name, Byte[] value)
         {
             Name = name;
             Type = type;

@@ -28,7 +28,7 @@ namespace Graphics
         private readonly float zoomrate;
 
         private Vector2 dragstart;
-        private bool drag;
+        private bool dragging;
 
         public float Zoom
         {
@@ -42,6 +42,7 @@ namespace Graphics
                 return zoom;
             }
         } // this might be pointless. its kinda messy.
+        
         /// <summary>
         /// A Camera using a matrix3x3 to control position, zoom and inputs.
         /// </summary>
@@ -63,6 +64,7 @@ namespace Graphics
             
             basescale = Scale;
         }
+        
         /// <summary>
         /// Sets "zoomlevel" to 0 if object ZoomID matches the last time "ZoomTo" was called.
         /// </summary>
@@ -71,6 +73,7 @@ namespace Graphics
         {
             if (zoomID == ID) zoomlevel = 0;
         }
+        
         /// <summary>
         /// Zooms towards a point.
         /// </summary>
@@ -90,6 +93,7 @@ namespace Graphics
                 Task.Delay(zoomtime).ContinueWith(t => ResetZoom(localID)); // after zoomtime(ms) stops zooming if local ID matches zoom ID
             }
         }
+        
         /// <summary>
         /// Changes the camera matrix to reflect the new window size.
         /// </summary>
@@ -97,12 +101,20 @@ namespace Graphics
         public void UpdateWindowSize(Vector2 WindowSize)
         {
             windowsize = WindowSize;
-            basescale = new Vector2(zoom / windowsize.X / windowunit, (zoom / windowsize.Y / windowunit));
+            basescale = new Vector2(zoom / windowsize.X / windowunit, zoom / windowsize.Y / windowunit);
         }
+        
         /// <summary>
         /// Called on each frame update.
         /// </summary>
         /// <param name="delta">time passed since last processed.</param>
+        
+        public void ToggleDrag(Vector2 Position) 
+        {
+            dragging = !dragging;
+            if (dragging) dragstart = Position;
+        }
+        
         public void Process(float delta)
         {
             Zoom *= MathF.Pow(MathF.Pow(zoomrate, zoomlevel), delta); // decrease by zoomrate in zoomtime
