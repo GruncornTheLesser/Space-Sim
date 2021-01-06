@@ -21,7 +21,6 @@ namespace Graphics
         private int zoomlevel; 
         private int zoomID;
 
-        private Vector2 windowsize; // dont really want stored this -> needed for ScreenToWorld()
         private readonly float windowunit; // nor this
 
         private readonly int zoomtime;
@@ -57,7 +56,6 @@ namespace Graphics
             zoom = 1;
             
             windowunit = WindowUnit;
-            windowsize = WindowSize;
 
             zoomrate = ZoomRate;
             zoomtime = ZoomTime;
@@ -74,6 +72,11 @@ namespace Graphics
             if (zoomID == ID) zoomlevel = 0;
         }
         
+
+        /* THING TO DO:
+         * have not implemented the movement yet.
+         * have not implemented the movement while zooming.
+         */
         /// <summary>
         /// Zooms towards a point.
         /// </summary>
@@ -100,21 +103,15 @@ namespace Graphics
         /// <param name="WindowSize">New window size.</param>
         public void UpdateWindowSize(Vector2 WindowSize)
         {
-            windowsize = WindowSize;
-            basescale = new Vector2(zoom / windowsize.X / windowunit, zoom / windowsize.Y / windowunit);
+            basescale = new Vector2(zoom / WindowSize.X / windowunit, zoom / WindowSize.Y / windowunit);
         }
         
+
+
         /// <summary>
         /// Called on each frame update.
         /// </summary>
         /// <param name="delta">time passed since last processed.</param>
-        
-        public void ToggleDrag(Vector2 Position) 
-        {
-            dragging = !dragging;
-            if (dragging) dragstart = Position;
-        }
-        
         public void Process(float delta)
         {
             Zoom *= MathF.Pow(MathF.Pow(zoomrate, zoomlevel), delta); // decrease by zoomrate in zoomtime

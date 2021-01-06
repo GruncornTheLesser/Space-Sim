@@ -12,6 +12,9 @@ using OpenTK.Mathematics;
 
 namespace Graphics
 {
+
+
+
     public sealed class Window : GameWindow
     {
         // Window Variable
@@ -60,14 +63,14 @@ namespace Graphics
         }
 
 
-        // should remove later
+        // should remove/move later
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
-            if (e.Button == MouseButton.Button1) Camera.ToggleDrag(MousePosition);
+
         }
         protected override void OnMouseUp(MouseButtonEventArgs e)
         {
-            Camera.ToggleDrag(MousePosition);
+
         }
 
         protected override void OnMouseWheel(MouseWheelEventArgs e)
@@ -107,7 +110,7 @@ namespace Graphics
         /// <summary>
         /// Converts Screen space to world space.
         /// </summary>
-        /// <param name="Pos">the pizel position on the screen.</param>
+        /// <param name="Pos">the pixel position on the screen.</param>
         /// <returns>The position in the world space.</returns>
         public Vector2 ScreenToWorld(Vector2 Pos) => Camera.Position + new Vector2(((2 * Pos.X / Size.X) - 1) / 2 / Camera.Scale.X, ((2 * Pos.Y / Size.Y) - 1) / 2 / Camera.Scale.Y);
     }

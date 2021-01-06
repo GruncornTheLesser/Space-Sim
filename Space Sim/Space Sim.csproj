@@ -16,6 +16,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Graphics\Classes\Maths.cs" />
+    <Compile Remove="Graphics\Classes\Shader.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="OpenTK" Version="4.3.0" />
   </ItemGroup>
 
@@ -237,6 +242,11 @@
 
   <ItemGroup>
     <Folder Include="Graphics\Textures\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Graphics\Classes\Maths.cs" />
+    <None Include="Graphics\Classes\Shader.cs" />
   </ItemGroup>
 
 </Project>
