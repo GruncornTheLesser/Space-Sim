@@ -40,7 +40,7 @@ using System.Drawing;
 */
 namespace Graphics
 {
-    class RenderObject<Vertex> : Node2D where Vertex : unmanaged
+    class RenderObject2D<Vertex> : Node2D where Vertex : unmanaged
     {
         private readonly int VertexArrayHandle;
         private readonly int VertexBufferHandle;
@@ -58,7 +58,7 @@ namespace Graphics
         // Mostly a change to window.
 
         // still assumes a 2D render object in constructor
-        public RenderObject(float Rotation, Vector2 Scale, Vector2 Position, Vertex[] Vertices) : base(Rotation, Scale, Position)
+        public RenderObject2D(float Rotation, Vector2 Scale, Vector2 Position, Vertex[] Vertices) : base(Rotation, Scale, Position)
         {
             this.VertexCount = Vertices.Length;
 
@@ -79,7 +79,7 @@ namespace Graphics
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
         }
-        public RenderObject(float Rotation, float ScaleX, float ScaleY, float PositionX, float PositionY, Vertex[] Vertices) : base(Rotation, new Vector2(ScaleX, ScaleY), new Vector2(PositionX, PositionY))
+        public RenderObject2D(float Rotation, float ScaleX, float ScaleY, float PositionX, float PositionY, Vertex[] Vertices) : base(Rotation, new Vector2(ScaleX, ScaleY), new Vector2(PositionX, PositionY))
         {
             this.VertexCount = Vertices.Length;
 
@@ -287,11 +287,15 @@ namespace Graphics
         }
 
 
+        public virtual void OnMouseDown(Vector2 MousePosition) { }
+        public virtual void OnMouseUp(Vector2 MousePosition) { }
+
+
 
         /// <summary>
-        /// Show This object on the screen.
+        /// Show this object on the screen.
         /// </summary>
-        /// <param name="Camera">The Camera Matrix.</param>
+        /// <param name="Camera">The Camera transform matrix.</param>
         /// <param name="Time"></param>
         public void Render(Camera2D Camera, float Time)
         {
@@ -300,10 +304,15 @@ namespace Graphics
             GL.UseProgram(ProgramHandle);
 
             // pass in uniforms
-            GL.UniformMatrix3(VertexLength, true, ref Transform_Matrix); // 3
-            GL.UniformMatrix3(VertexLength + 1, true, ref Camera.Transform_Matrix); // 4
-            GL.Uniform1(VertexLength + 2, Time); // 5
-            GL.Uniform1(VertexLength + 3, 60f);
+            
+            // matrix transforms
+            GL.UniformMatrix3(VertexLength, true, ref Transform_Matrix); // location 3
+            GL.UniformMatrix3(VertexLength + 1, true, ref Camera.Transform_Matrix); // location 4
+            
+            // shader variables
+            GL.Uniform1(VertexLength + 2, Time); // location 5
+            GL.Uniform1(VertexLength + 3, 60f); // location 6
+
             /* https://opentk.net/learn/chapter1/6-multiple-textures.html
              * Sampler2D variable is uniform but isn't assigned the same way
              * this is assigned a location value with a texture sampler 
@@ -316,8 +325,9 @@ namespace Graphics
              * 
              * idk its weird openGL stuff. 
              */
-
-            // pass in textures(sampler2D)
+            
+            // only have one texture right now it would be cool to have normal or AO maps etc
+            
             GL.BindTextures(0, 1, new int[1] { TextureHandle });
             GL.BindVertexArray(VertexArrayHandle);
             GL.DrawArrays(PrimitiveType.Triangles, 0, VertexCount);

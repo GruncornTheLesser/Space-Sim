@@ -11,8 +11,8 @@ layout(location = 4) uniform mat3 camera;
 layout(location = 5) uniform float Time;
 layout(location = 6) uniform float FrameRate;
 
-out vec4 FragColour;
-out vec2 FragUV;
+out vec4 FragColour; // colour from vertices
+out vec2 FragUV; // coordinates in frag space
 
 void main(void)
 {

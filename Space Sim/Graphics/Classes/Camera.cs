@@ -1,10 +1,15 @@
 ﻿using OpenTK.Mathematics;
+using OpenTK.Windowing.Common;
 using System;
 
 using System.Threading.Tasks;
 
 namespace Graphics
 {
+
+    public delegate Vector2 MouseDown(Vector2 Position);
+    public delegate Vector2 MouseUp(Vector2 Position);
+
     sealed class Camera2D : Node2D
     {
 
@@ -18,24 +23,26 @@ namespace Graphics
          */
         private Vector2 basescale; // used when changing window size
         private float zoom;
-        private int zoomlevel; 
+        private int ZoomRate; 
         private int zoomID;
 
-        private Vector2 windowsize; // dont really want stored this -> needed for ScreenToWorld()
-        private readonly float windowunit; // nor this
+        private readonly float windowunit;
+        private Vector2 windowsize;
 
         private readonly int zoomtime;
         private readonly float zoomrate;
 
         private Vector2 dragstart;
-        private bool dragging;
 
+        /// <summary>
+        /// Sets Zoom and changes scale
+        /// </summary>
         public float Zoom
         {
             set
             {
                 zoom = value;
-                Scale = basescale * zoom;
+                Scale = basescale / zoom;
             }
             get
             {
@@ -53,11 +60,10 @@ namespace Graphics
         public Camera2D(Vector2 WindowSize, float WindowUnit, int ZoomTime, float ZoomRate) : base(0, 1f / WindowSize.X / WindowUnit, (1f / WindowSize.Y / WindowUnit) * (WindowSize.Y / WindowSize.X), 0, 0)
         {
             zoomID = 0;
-            zoomlevel = 0;
+            this.ZoomRate = 0;
             zoom = 1;
             
             windowunit = WindowUnit;
-            windowsize = WindowSize;
 
             zoomrate = ZoomRate;
             zoomtime = ZoomTime;
@@ -66,14 +72,34 @@ namespace Graphics
         }
         
         /// <summary>
-        /// Sets "zoomlevel" to 0 if object ZoomID matches the last time "ZoomTo" was called.
+        /// Sets "zoomrate" to 0 if object ZoomID matches the last time "ZoomTo" was called.
         /// </summary>
         /// <param name="ID">The local ZoomID.</param>
-        private void ResetZoom(int ID) 
+        private void ResetZoomRate(int ID) 
         {
-            if (zoomID == ID) zoomlevel = 0;
+            if (zoomID == ID) ZoomRate = 0;
         }
         
+
+        /* THING TO DO:
+         * have not implemented the movement while zooming.
+         */
+
+        public void OnMouseDown(MouseButtonEventArgs e)
+        {
+            
+        }
+        public void OnMouseUp(MouseButtonEventArgs e)
+        {
+
+        }
+        public void OnMouseMove(MouseMoveEventArgs e)
+        {
+            // when mouse moves add the distance its moved to the camera render position
+            Position += new Vector2(e.Delta.X / windowsize.X * 2, -e.Delta.Y / windowsize.Y * 2);
+        }
+        
+
         /// <summary>
         /// Zooms towards a point.
         /// </summary>
@@ -82,15 +108,15 @@ namespace Graphics
         public void ZoomTo(Vector2 Position, int Delta) 
         {
             zoomID++;
-            if (zoomlevel != 0 && MathF.Sign(Delta) != MathF.Sign(zoomlevel)) // abrupt stop if reverse while zooming
+            if (ZoomRate != 0 && MathF.Sign(Delta) != MathF.Sign(ZoomRate)) // abrupt stop if reverse while zooming
             {
-                ResetZoom(zoomID);
+                ResetZoomRate(zoomID);
             }
             else
             {
-                zoomlevel += Delta;
+                ZoomRate += Delta;
                 int localID = zoomID; // needs to be local here not when ResetZoom is called
-                Task.Delay(zoomtime).ContinueWith(t => ResetZoom(localID)); // after zoomtime(ms) stops zooming if local ID matches zoom ID
+                Task.Delay(zoomtime).ContinueWith(t => ResetZoomRate(localID)); // after zoomtime(ms) stops zooming if local ID matches zoom ID
             }
         }
         
@@ -101,23 +127,17 @@ namespace Graphics
         public void UpdateWindowSize(Vector2 WindowSize)
         {
             windowsize = WindowSize;
-            basescale = new Vector2(zoom / windowsize.X / windowunit, zoom / windowsize.Y / windowunit);
+            basescale = new Vector2(zoom / WindowSize.X / windowunit, zoom / WindowSize.Y / windowunit);
         }
-        
+
+
         /// <summary>
         /// Called on each frame update.
         /// </summary>
         /// <param name="delta">time passed since last processed.</param>
-        
-        public void ToggleDrag(Vector2 Position) 
-        {
-            dragging = !dragging;
-            if (dragging) dragstart = Position;
-        }
-        
         public void Process(float delta)
         {
-            Zoom *= MathF.Pow(MathF.Pow(zoomrate, zoomlevel), delta); // decrease by zoomrate in zoomtime
+            Zoom *= MathF.Pow(MathF.Pow(zoomrate, ZoomRate), delta); // decrease by zoomrate in zoomtime
         }
     }
 }
