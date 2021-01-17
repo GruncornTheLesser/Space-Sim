@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows.Forms;
-using Graphics;
+using GameObjects;
 using OpenTK.Windowing.Desktop;
+using OpenTK.Mathematics;
 namespace Space_Sim
 {
     static class Program
@@ -14,11 +14,12 @@ namespace Space_Sim
         {
             var GWS = new GameWindowSettings();
             var NWS = new NativeWindowSettings();
-            NWS.Size = new OpenTK.Mathematics.Vector2i(800, 800);
+            NWS.Size = new Vector2i(800, 800);
             using (Window Sim = new Window(GWS, NWS))
             {
                 Sim.Run();
             }
+            
         }
     }
 

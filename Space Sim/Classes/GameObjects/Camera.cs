@@ -1,14 +1,17 @@
 ﻿using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using System;
-
+using Graphics;
 using System.Threading.Tasks;
 
-namespace Graphics
+namespace GameObjects
 {
 
-    public delegate Vector2 MouseDown(Vector2 Position);
-    public delegate Vector2 MouseUp(Vector2 Position);
+    /* THING TO DO:
+     * have not implemented the movement while zooming. 
+     * 
+     * I think basescale has introduced an extra factor of 2 from somewhere. -> fix that
+     */
 
     sealed class Camera2D : Node2D
     {
@@ -32,27 +35,31 @@ namespace Graphics
         private readonly int zoomtime;
         private readonly float zoomrate;
 
+        /// <summary>
+        /// The center point of the camera in the world space. Different from "position" which is render space
+        /// </summary>
         public Vector2 WorldPosition
         {
             set
             {
-                Position = value * basescale;
+                Position = value * 2 * -Scale;
             }
             get
             {
-                return new Vector2(Position.X / basescale.X / 2, Position.Y / basescale.Y / 2) * zoom;
+                return new Vector2(-Position.X / Scale.X / 2, -Position.Y / Scale.Y / 2);
             }
         }
-
-
-
+        
         /// <summary>
-        /// Sets Zoom and changes scale
+        /// Zooms in and out. Preserves Camera World Position.
         /// </summary>
         public float Zoom
         {
             set
             {
+                // WP1 = Pos * zoom1 / basescale, WP2 = Pos * zoom2 / basescale
+                // WP1 = K * WP2 => K = WP1 / WP2 = zoom1 / zoom2 
+                Position = Position * zoom / value; // without this line render position is preserved not world position
                 zoom = value;
                 Scale = basescale / zoom;
             }
@@ -60,7 +67,12 @@ namespace Graphics
             {
                 return zoom;
             }
-        } // this might be pointless. its kinda messy.
+        }
+        
+       
+        
+        
+        
         
         /// <summary>
         /// A Camera using a matrix3x3 to control position, zoom and inputs.
@@ -93,9 +105,6 @@ namespace Graphics
         }
         
 
-        /* THING TO DO:
-         * have not implemented the movement while zooming.
-         */
 
         public void OnMouseDown(MouseButtonEventArgs e)
         {
@@ -108,6 +117,7 @@ namespace Graphics
         public void OnMouseMove(MouseMoveEventArgs e)
         {
             // when mouse moves add the distance its moved to the camera render position
+            // dealt with in render space as its tidier
             Position += new Vector2(e.Delta.X / windowsize.X * 2, -e.Delta.Y / windowsize.Y * 2);
         }
         

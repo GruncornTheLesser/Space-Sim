@@ -6,6 +6,7 @@ using System.Reflection;
 using OpenTK.Mathematics;
 using OpenTK.Graphics.OpenGL4;
 using System.Drawing;
+using OpenTK.Windowing.Common;
 /*
 * OpenGL Hardware Pipeline
 * ====================CPU====================
@@ -28,20 +29,33 @@ using System.Drawing;
 *      V
 * Fragment Shader - code to colour each pixel
 *                      V
-* Blending - overlapping pixels are blended into 1
+[~] Blending - overlapping pixels are blended into 1
 *                      V
-* Frame Buffer - loads 2d image into frame buffer
+[~] Frame Buffer - loads 2d image into frame buffer
 * ==================RETURN===================
 [X] means not doing it
-[~] means its done automatically
-* A Handle is a pointer for openGL. I think. it points to a location in memory. I dont really deal with it tho. I use it to hold pieces of info in OpenGL
-* 
+[~] means its done by openGl 
+*
+* A Handle is a pointer for openGL. I think. it points to a location in memory.
 * unmanged is any of the follwing types: Sbyte, byte, short, ushort, int, uint, long, ulong, char, float, double, decimal, or bool
+* 
+* 
 */
+
+
+/* THING TO DO:
+ * Z index to decide which goes in front. - Mostly a change to window. - useful especially for buttons which must be in front
+ * Write better shaders for planets
+ * FixToScreenSpace - fix movement to window ie unaffected by camera - pass in an identity matrix 
+ */
+
+
 namespace Graphics
 {
     class RenderObject2D<Vertex> : Node2D where Vertex : unmanaged
     {
+       
+
         private readonly int VertexArrayHandle;
         private readonly int VertexBufferHandle;
         private readonly int TextureHandle; 
@@ -53,23 +67,18 @@ namespace Graphics
 
         public PolygonMode PolygonMode = PolygonMode.Fill;
 
-        // THING TO DO:
-        // public int Z_index; to decide which goes in front.
-        // Mostly a change to window.
+        public bool FixToScreenSpace;
 
-        // still assumes a 2D render object in constructor
-        public RenderObject2D(float Rotation, Vector2 Scale, Vector2 Position, Vertex[] Vertices) : base(Rotation, Scale, Position)
+
+
+        public RenderObject2D(float Rotation, Vector2 Scale, Vector2 Position, Vertex[] Vertices, string Texture, string VertexShader, string FragmentShader) : base(Rotation, Scale, Position)
         {
             this.VertexCount = Vertices.Length;
 
             Init_BufferArray(out VertexArrayHandle, out VertexBufferHandle, out VertexSize, Vertices);
 
-            /* THING TO DO:
-             * Parameters needs to passing from constructor
-             * Planets and default will change
-             */
-            TextureHandle = Init_Textures("3 Earth TS"); // jupiter spritesheet
-            ProgramHandle = Init_Program("Default", "Default");
+            TextureHandle = Init_Textures(Texture);
+            ProgramHandle = Init_Program(VertexShader, FragmentShader);
 
             // fixes texture at edges
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
@@ -79,15 +88,15 @@ namespace Graphics
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
         }
-        public RenderObject2D(float Rotation, float ScaleX, float ScaleY, float PositionX, float PositionY, Vertex[] Vertices) : base(Rotation, new Vector2(ScaleX, ScaleY), new Vector2(PositionX, PositionY))
+        public RenderObject2D(float Rotation, float ScaleX, float ScaleY, float PositionX, float PositionY, Vertex[] Vertices, string Texture, string VertexShader, string FragmentShader) : base(Rotation, new Vector2(ScaleX, ScaleY), new Vector2(PositionX, PositionY))
         {
             this.VertexCount = Vertices.Length;
 
             Init_BufferArray(out VertexArrayHandle, out VertexBufferHandle, out VertexSize, Vertices);
-
-            TextureHandle = Init_Textures("Planet");
-            ProgramHandle = Init_Program("Default", "Default");
             
+            TextureHandle = Init_Textures(Texture);
+            ProgramHandle = Init_Program(VertexShader, FragmentShader);
+
             // fixes texture at edges
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
@@ -178,8 +187,8 @@ namespace Graphics
             int Handle = GL.CreateProgram();
 
             // compile new shaders
-            int Vert = Load_Shader(ShaderType.VertexShader, @"Graphics\Shaders\" + VertName + "Vert.shader");
-            int Frag = Load_Shader(ShaderType.FragmentShader, @"Graphics\Shaders\" + FragName + "Frag.shader");
+            int Vert = Load_Shader(ShaderType.VertexShader, @"Shaders\" + VertName + "Vert.shader");
+            int Frag = Load_Shader(ShaderType.FragmentShader, @"Shaders\" + FragName + "Frag.shader");
 
             // attach new shaders
             GL.AttachShader(Handle, Vert);
@@ -244,7 +253,7 @@ namespace Graphics
         private int Init_Textures(string name)
         {
             int width, height, Handle;
-            float[] data = Load_Texture(out width, out height, "Graphics/Textures/" + name + ".png");
+            float[] data = Load_Texture(out width, out height, "Textures/" + name + ".png");
             GL.CreateTextures(TextureTarget.Texture2D, 1, out Handle);
             // level of mipmap, format, width, height
             GL.TextureStorage2D(Handle, 1, SizedInternalFormat.Rgba32f, width, height);
@@ -286,10 +295,9 @@ namespace Graphics
             return Serialized_Data;
         }
 
-
-        public virtual void OnMouseDown(Vector2 MousePosition) { }
-        public virtual void OnMouseUp(Vector2 MousePosition) { }
-
+        public virtual void OnMouseDown(MouseButtonEventArgs e) { }
+        public virtual void OnMouseUp(MouseButtonEventArgs e) { }
+        public virtual void OnMouseMove(MouseMoveEventArgs e) { }
 
 
         /// <summary>
@@ -297,7 +305,7 @@ namespace Graphics
         /// </summary>
         /// <param name="Camera">The Camera transform matrix.</param>
         /// <param name="Time"></param>
-        public void Render(Camera2D Camera, float Time)
+        public void Render(Matrix3 Camera, float Time)
         {
             GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode);
             // tell openGL to use this objects program
@@ -307,7 +315,7 @@ namespace Graphics
             
             // matrix transforms
             GL.UniformMatrix3(VertexLength, true, ref Transform_Matrix); // location 3
-            GL.UniformMatrix3(VertexLength + 1, true, ref Camera.Transform_Matrix); // location 4
+            GL.UniformMatrix3(VertexLength + 1, true, ref Camera); // location 4
             
             // shader variables
             GL.Uniform1(VertexLength + 2, Time); // location 5

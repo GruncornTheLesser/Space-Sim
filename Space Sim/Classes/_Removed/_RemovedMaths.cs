@@ -5,7 +5,8 @@ namespace Maths
 {
     /*
      * The purpose of this namespace was to deal with matrix calculations. The reason I didnt want to use OpenGL.Mathematics was in certain scenarios it 
-     * doesnt work how expected. for example it doesnt always allow matrix multiplication and theyre all sealed classes meaning I cant inherit from them.
+     * doesnt work how expected and doesnt allow for matrix multiplication that should work. and I wanted to inherit the matrix to use as a transform matrix.
+     * OpenGL.Mathematics has sealed all its classes.
      * 
      * Because of the way openTK is set up it needs reference variables so I decided to scrap this namespace.
      * Ive replaced the Node2D transform matrix with a new transform matrix which holds all the same variables and data but also a matrix variable.

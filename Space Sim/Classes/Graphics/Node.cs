@@ -86,6 +86,9 @@ namespace Graphics
         }
     }
 
+
+
+    // Not doing 3d isnt neccessary + not what user asked for.
     // yuck.
     //https://www.symbolab.com/solver/simplify-calculator/simplify%20%5Cbegin%7Bpmatrix%7D1%260%260%26M%5C%5C%20%20%20%20%200%261%260%26N%5C%5C%20%20%20%20%200%260%261%26O%5C%5C%20%20%20%20%200%260%260%261%5Cend%7Bpmatrix%7D%5Cbegin%7Bpmatrix%7DS%260%260%260%5C%5C%20%20%20%200%26T%260%260%5C%5C%20%20%20%200%260%26U%260%5C%5C%20%20%20%200%260%260%261%5Cend%7Bpmatrix%7D%5Cbegin%7Bpmatrix%7DcosZ%26-sinZ%260%260%5C%5C%20%20%20%20sin%5Cleft(Z%5Cright)%26cosZ%260%260%5C%5C%20%20%20%20%20%20%200%260%261%260%5C%5C%20%20%20%20%20%20%200%260%260%261%5Cend%7Bpmatrix%7D%5Cbegin%7Bpmatrix%7DcosY%260%26sinY%260%5C%5C%20%20%20%20%20%20%20%20%200%261%260%260%5C%5C%20%20%20%20%20%20%20%20-sinY%260%26cosY%260%5C%5C%20%20%20%20%20%20%20%200%20%260%260%261%5Cend%7Bpmatrix%7D%5Cbegin%7Bpmatrix%7D1%260%260%260%5C%5C%20%20%20%20%20%20%20%200%26cosX%26-sinX%260%5C%5C%20%20%20%20%20%20%20%200%26sinX%26cosX%260%5C%5C%20%20%20%20%20%20%20%200%260%260%261%5Cend%7Bpmatrix%7D
     // the individual matrix transformation multiplied together into 1 matrix

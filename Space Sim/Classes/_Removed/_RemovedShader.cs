@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using OpenTK.Graphics.OpenGL4;
 
-namespace Graphics.Shaders
+namespace Shaders
 {
     /* Unfinished
      * very much a thing to do.
@@ -46,7 +46,7 @@ namespace Graphics.Shaders
             {
                 if (P.VertexParameter) code += P.GenerateDefinition(ref indexlocation);
             }
-            return "";
+            return code;
         }
 
     }
@@ -123,16 +123,18 @@ namespace Graphics.Shaders
                         default:
                             throw new Exception("Unsure how to handle a value of this type.");
                     }
+                    location++;
                     break;
+                    
 
                 case TypeQualifier.Vertex:
                     switch (Value.Length)
                     {
                         case 1:
-                            code = $"uniform float {Name};";
+                            code = $"layout(location = {location}) in float {Name};";
                             break;
                         case 2:
-                            code = $"layout(location = {location}) in layout(location = {location}) vec2 {Name};";
+                            code = $"layout(location = {location}) in vec2 {Name};";
                             break;
                         case 3:
                             code = $"layout(location = {location}) in vec3 {Name};";
@@ -149,10 +151,14 @@ namespace Graphics.Shaders
                         default:
                             throw new Exception("Unsure how to handle a value of this type.");
                     }
+                    location++;
                     break;
+
 
                 default:
                     throw new Exception("Type qualifier unrecognised.");
+
+                
             }
 
             return code;
