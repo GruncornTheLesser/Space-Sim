@@ -89,7 +89,19 @@ namespace Graphics
         {
             Time += (float)e.Time;
             //Vsync: {VSync} FPS: {1f / e.Time:0} Time: {Time}
-            Title = $"MousePos: {MousePosition} WorldPos:{ScreenToWorld(MousePosition)}, CameraPos: {Camera.Position} Zoom: {Camera.Zoom}";
+            Title =
+                "WorldPos: " +
+                $"{MathF.Round(ScreenToWorld(MousePosition).X, 2)}," +
+                $"{MathF.Round(ScreenToWorld(MousePosition).Y, 2)} " +
+
+                $"CameraPos: " +
+                $"{MathF.Round(Camera.Position.X, 2)}," +
+                $"{MathF.Round(Camera.Position.Y, 2)} " +
+
+                $"CameraWorldPos: {Camera.WorldPosition}";// +
+                //$"{MathF.Round(Camera.WorldPosition.X, 2)}," +
+                //$"{MathF.Round(Camera.WorldPosition.Y, 2)} ";
+
             
             Camera.Process((float)e.Time);
             
@@ -112,7 +124,7 @@ namespace Graphics
         /// </summary>
         /// <param name="Pos">the pixel position on the screen.</param>
         /// <returns>The position in the world space.</returns>
-        public Vector2 ScreenToWorld(Vector2 Pos) => Camera.Position + new Vector2(((2 * Pos.X / Size.X) - 1) / 2 / Camera.Scale.X, ((2 * Pos.Y / Size.Y) - 1) / 2 / Camera.Scale.Y);
+        public Vector2 ScreenToWorld(Vector2 Pos) => Camera.WorldPosition + new Vector2(((2 * Pos.X / Size.X) - 1) / 2 / Camera.Scale.X, ((2 * Pos.Y / Size.Y) - 1) / 2 / Camera.Scale.Y);
     }
 }
 

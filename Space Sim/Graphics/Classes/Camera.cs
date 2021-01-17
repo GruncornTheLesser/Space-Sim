@@ -16,14 +16,14 @@ namespace Graphics
         /* ZoomID is the last ID of the change in zoom.
          * The only reason for it not to match is if a newer call exists.
          * 
-         * The camera will zoom by "zoomrate" for "zoomtime" since the last change in "zoomlevel" to change zoom
+         * The camera will zoom by "zoomrate" for "zoomtime" since the last change in "ZoomIndex" to change zoom
          * If the ZoomTo is called twice then it zooms at double speed.
          * 
          * If "zoom" = 1, "scale" = "basescale".
          */
         private Vector2 basescale; // used when changing window size
         private float zoom;
-        private int ZoomRate; 
+        private int ZoomIndex;
         private int zoomID;
 
         private readonly float windowunit;
@@ -32,7 +32,19 @@ namespace Graphics
         private readonly int zoomtime;
         private readonly float zoomrate;
 
-        private Vector2 dragstart;
+        public Vector2 WorldPosition
+        {
+            set
+            {
+                Position = value * basescale;
+            }
+            get
+            {
+                return new Vector2(Position.X / basescale.X / 2, Position.Y / basescale.Y / 2) * zoom;
+            }
+        }
+
+
 
         /// <summary>
         /// Sets Zoom and changes scale
@@ -60,7 +72,7 @@ namespace Graphics
         public Camera2D(Vector2 WindowSize, float WindowUnit, int ZoomTime, float ZoomRate) : base(0, 1f / WindowSize.X / WindowUnit, (1f / WindowSize.Y / WindowUnit) * (WindowSize.Y / WindowSize.X), 0, 0)
         {
             zoomID = 0;
-            this.ZoomRate = 0;
+            this.ZoomIndex = 0;
             zoom = 1;
             
             windowunit = WindowUnit;
@@ -77,7 +89,7 @@ namespace Graphics
         /// <param name="ID">The local ZoomID.</param>
         private void ResetZoomRate(int ID) 
         {
-            if (zoomID == ID) ZoomRate = 0;
+            if (zoomID == ID) ZoomIndex = 0;
         }
         
 
@@ -108,13 +120,13 @@ namespace Graphics
         public void ZoomTo(Vector2 Position, int Delta) 
         {
             zoomID++;
-            if (ZoomRate != 0 && MathF.Sign(Delta) != MathF.Sign(ZoomRate)) // abrupt stop if reverse while zooming
+            if (ZoomIndex != 0 && MathF.Sign(Delta) != MathF.Sign(ZoomIndex)) // abrupt stop if reverse while zooming
             {
                 ResetZoomRate(zoomID);
             }
             else
             {
-                ZoomRate += Delta;
+                ZoomIndex += Delta;
                 int localID = zoomID; // needs to be local here not when ResetZoom is called
                 Task.Delay(zoomtime).ContinueWith(t => ResetZoomRate(localID)); // after zoomtime(ms) stops zooming if local ID matches zoom ID
             }
@@ -137,7 +149,7 @@ namespace Graphics
         /// <param name="delta">time passed since last processed.</param>
         public void Process(float delta)
         {
-            Zoom *= MathF.Pow(MathF.Pow(zoomrate, ZoomRate), delta); // decrease by zoomrate in zoomtime
+            Zoom *= MathF.Pow(MathF.Pow(zoomrate, ZoomIndex), delta); // decrease by zoomrate in zoomtime
         }
     }
 }
