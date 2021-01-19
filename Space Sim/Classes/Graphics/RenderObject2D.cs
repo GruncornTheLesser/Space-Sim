@@ -45,8 +45,8 @@ using OpenTK.Windowing.Common;
 
 /* THING TO DO:
  * Z index to decide which goes in front. - Mostly a change to window. - useful especially for buttons which must be in front
- * Write better shaders for planets
- * FixToScreenSpace - fix movement to window ie unaffected by camera - pass in an identity matrix 
+ * Write better shaders for planets - could do some 3d mapping
+ * FixToScreenSpace 
  */
 
 
@@ -54,8 +54,6 @@ namespace Graphics
 {
     class RenderObject2D<Vertex> : Node2D where Vertex : unmanaged
     {
-       
-
         private readonly int VertexArrayHandle;
         private readonly int VertexBufferHandle;
         private readonly int TextureHandle; 
@@ -67,8 +65,7 @@ namespace Graphics
 
         public PolygonMode PolygonMode = PolygonMode.Fill;
 
-        public bool FixToScreenSpace;
-
+        public bool FixToScreenSpace = false;
 
 
         public RenderObject2D(float Rotation, Vector2 Scale, Vector2 Position, Vertex[] Vertices, string Texture, string VertexShader, string FragmentShader) : base(Rotation, Scale, Position)
@@ -147,15 +144,16 @@ namespace Graphics
             // create new buffer storage of vertice data
             GL.NamedBufferStorage(BufferHandle, VertexSize * Vertices.Length, Vertices, BufferStorageFlags.MapWriteBit);
 
-            /* THING TO DO:
-             * needs to adapt to custom Vertex
-             * 
-             * iterate through struct members
+
+            /* iterates through struct members
              * this is gross
              */
             FieldInfo[] FieldInfoArray = typeof(Vertex).GetFields();
-            int RelativeOffset = 0;
+            
+            
             VertexLength = FieldInfoArray.Length;
+
+            int RelativeOffset = 0;
             for (int i = 0; i < VertexLength; i++)
             {
                 Type T = FieldInfoArray[i].FieldType;
@@ -166,7 +164,8 @@ namespace Graphics
                 else if (T == typeof(Color4)) LoadBufferAttribute(ArrayHandle, 4, i, ref RelativeOffset);
                 else if (T == typeof(float)) LoadBufferAttribute(ArrayHandle, 1, i, ref RelativeOffset);
                 else if (T == typeof(Int32)) LoadBufferAttribute(ArrayHandle, 1, i, ref RelativeOffset);
-                else throw new Exception("RenderObject cannot load type " + T.ToString() + " into buffer reliably"); // shouldnt be needed as its already known that its unmanaged
+                else throw new Exception("RenderObject cannot load type " + T.ToString() + " into buffer reliably"); 
+                // shouldnt be needed as its already known that its unmanaged
 
             }
             // link the vertex array and buffer and provide the step size(stride) as size of Vertex
@@ -295,6 +294,8 @@ namespace Graphics
             return Serialized_Data;
         }
 
+        
+        
         public virtual void OnMouseDown(MouseButtonEventArgs e) { }
         public virtual void OnMouseUp(MouseButtonEventArgs e) { }
         public virtual void OnMouseMove(MouseMoveEventArgs e) { }
@@ -307,7 +308,7 @@ namespace Graphics
         /// <param name="Time"></param>
         public void Render(Matrix3 Camera, float Time)
         {
-            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode);
+            //GL.PolygonMode(MaterialFace.Front, PolygonMode);
             // tell openGL to use this objects program
             GL.UseProgram(ProgramHandle);
 
@@ -315,8 +316,9 @@ namespace Graphics
             
             // matrix transforms
             GL.UniformMatrix3(VertexLength, true, ref Transform_Matrix); // location 3
+
             GL.UniformMatrix3(VertexLength + 1, true, ref Camera); // location 4
-            
+
             // shader variables
             GL.Uniform1(VertexLength + 2, Time); // location 5
             GL.Uniform1(VertexLength + 3, 60f); // location 6

@@ -16,10 +16,11 @@ namespace GameObjects
 
     /* THING TO DO:
      * set up Z index
-     * Should be custom list object for render object update on change
-     * fancy computer science technique
+     * Should be custom list thing for render object update on change of Z index
      * Add events to objects
+     * ScreenSpace Y value broken???  FIXED
      */
+
     public sealed class Window : GameWindow
     {
         // Window Variable
@@ -66,8 +67,7 @@ namespace GameObjects
         {
 
             // remove later
-            RenderObjects2D.Add(new RenderObject2D<Vertex2D>(0.0f, new Vector2(48f, 48f), new Vector2(0, 0), SquareMesh, "8 Neptune TS", "Default", "Default"));
-
+            RenderObjects2D.Add(new RenderObject2D<Vertex2D>(0.0f, new Vector2(48f, 48f), new Vector2(0, 0), SquareMesh, "4 Mars TS", "Default", "Default"));
             // allows blending ie semi transparent stuff
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
@@ -123,8 +123,6 @@ namespace GameObjects
 
             
             Camera.Process((float)e.Time);
-            
-
             
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             

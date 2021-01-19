@@ -28,6 +28,9 @@
     <None Update="Shaders\DefaultFrag.shader">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Shaders\ButtonVert.shader">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Shaders\DefaultVert.shader">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -55,18 +58,14 @@
     <None Update="Textures\8 Neptune TS.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Textures\Planet.png">
+    <None Update="Textures\Button.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Textures\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Include="Classes\_Removed\_RemovedMaths.cs" />
-    <None Include="Classes\_Removed\_RemovedShader.cs" />
+    <None Include="Classes\_Removed\Shader.cs" />
   </ItemGroup>
 
 </Project>

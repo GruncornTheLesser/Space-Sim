@@ -27,8 +27,8 @@ namespace GameObjects
         event ButtonPress ButtonPressEvent;
 
         public Button(Vector2 Scale, Vector2 Position) : base(0, Scale, Position, Window.SquareMesh, "Button", "Button", "Default") 
-        { 
-            
+        {
+            FixToScreenSpace = true;
         } 
         public override void OnMouseDown(MouseButtonEventArgs e) { }
         public override void OnMouseUp(MouseButtonEventArgs e) { }

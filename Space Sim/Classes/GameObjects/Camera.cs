@@ -46,7 +46,7 @@ namespace GameObjects
             }
             get
             {
-                return new Vector2(-Position.X / Scale.X / 2, -Position.Y / Scale.Y / 2);
+                return new Vector2(-Position.X / Scale.X / 2, Position.Y / Scale.Y / 2);
             }
         }
         
@@ -118,6 +118,8 @@ namespace GameObjects
         {
             // when mouse moves add the distance its moved to the camera render position
             // dealt with in render space as its tidier
+            // mutliply by 2 because the render space is -1 to 1
+            // negative to match renderspace axis
             Position += new Vector2(e.Delta.X / windowsize.X * 2, -e.Delta.Y / windowsize.Y * 2);
         }
         
