@@ -4,8 +4,8 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Text;
 using OpenTK.Graphics.OpenGL4;
-
-namespace Shaders
+using OpenTK.Mathematics;
+namespace Graphics.Shaders
 {
     /* Unfinished
      * very much a thing to do.
@@ -44,7 +44,7 @@ namespace Shaders
         Both
     }
 
-    class ShaderProgram<Vertex> : Collection<Parameter>
+    class ShaderProgram<Vertex> : Collection<Iparameter>
     {
         private int ProgramHandle;
 
@@ -85,10 +85,11 @@ namespace Shaders
         }
         public void UseProgram() 
         {
-            if (!ready) 
-            {
-            #warning Program is not ready to be used. Program shader path has been changed or parameter has been added. Program must be compiled again to see changed
-            } 
+
+#if ready
+#warning Program is not ready to be used. Program shader path has been changed or parameter has been added. Program must be compiled again to see changed
+#endif
+
             GL.UseProgram(ProgramHandle);
 
 
@@ -130,15 +131,15 @@ namespace Shaders
             // get code from file
             string code = "#version 450 core\n";
             
-            // writes initial script for passing in vairables from vertex
+            // writes initial variable definition at start of script
             int location = 0;
-            if (shadertype == ShaderType.FragmentShader)
+            if (shadertype == ShaderType.VertexShader)
             {
-                foreach (Parameter P in this) P.GenFragDef(ref location);
+                foreach (Iparameter P in this) P.GenVertDef(ref location);
             }
             else
             {
-                foreach (Parameter P in this) P.GenVertDef(ref location);
+                foreach (Iparameter P in this) P.GenFragDef(ref location);
             }
             code += File.ReadAllText(path);
             
@@ -154,88 +155,8 @@ namespace Shaders
 
             return NewShaderHandle;
         }
-
-
-        unsafe public void AddParameter(TypeQualifier typequalifier, ValueType valuetype, ParameterType parametertype, string name, int* valuepointer)
-        {
-            this.Add(new Parameter(parametertype, typequalifier, valuetype, name, valuepointer));
-        }
-
     }
 
-    unsafe class Parameter
-    {
-        public ParameterType ParameterType; // Frag, Vert
-        public TypeQualifier TypeQualifier; // const, uniform, in
-        public ValueType ValueType; // float, vec2, mat3, Texture
-        public string Name;
-        public int* ValuePointer;
-        public int location;
-        
-        public Parameter(ParameterType parametertype, TypeQualifier typequalifier, ValueType valuetype, string name, int* valuepointer)
-        {
-            ParameterType = parametertype;
-            TypeQualifier = typequalifier;
-            ValueType = valuetype;
-            Name = name;
-            ValuePointer = valuepointer;
-        }
-        
-        public string GenVertDef(ref int location) 
-        {
-            
-            if (ParameterType == ParameterType.Fragment) return "";
-            
-            string code;
-            switch (TypeQualifier) 
-            {
-                case TypeQualifier.Vertex:
-                    if (ValueType == ValueType.Texture) throw new Exception("Cannot store texture on a vertex.");
-                    
-                    code = $"layout(location = {location++}) in {ValueType.ToString().ToLower()} {Name};\n";
-                    if (ParameterType == ParameterType.Both) code += $"out {ValueType.ToString().ToLower()} {Name}\n";
-                    
-                    break;
-                
-                
-                case TypeQualifier.Uniform:
-                    if (ValueType == ValueType.Texture) code = $"uniform sampler2D {Name};\n";
-                    else code = $"layout(location = {location++}) uniform {ValueType.ToString().ToLower()} {Name};\n";
-                    
-                    break;
-                default:
-                    throw new Exception("unidentified type qualifier.");
-            }
-            return code;
-        }
-        public string GenFragDef(ref int location) 
-        {
-            if (ParameterType == ParameterType.Vertex) return "";
-
-            string code;
-            switch (TypeQualifier)
-            {
-                case TypeQualifier.Vertex:
-                    if (ValueType == ValueType.Texture) throw new Exception("Cannot store texture on a vertex.");
-
-                    code = $"in {ValueType.ToString().ToLower()} {Name};\n";
-
-                    break;
-
-                case TypeQualifier.Uniform:
-                    if (ValueType == ValueType.Texture) code = $"uniform sampler2D {Name};\n";
-                    else code = $"layout(location = {location++}) uniform {ValueType.ToString().ToLower()} {Name};\n";
-
-                    break;
-                default:
-                    throw new Exception("unidentified type qualifier.");
-            }
-
-            return code;
-        }
-    
-        public void PassToShader() 
-        {
-        }
-    }
+   
 }
+

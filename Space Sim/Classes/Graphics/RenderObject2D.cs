@@ -7,6 +7,7 @@ using OpenTK.Mathematics;
 using OpenTK.Graphics.OpenGL4;
 using System.Drawing;
 using OpenTK.Windowing.Common;
+
 /*
 * OpenGL Hardware Pipeline
 * ====================CPU====================
@@ -149,8 +150,6 @@ namespace Graphics
              * this is gross
              */
             FieldInfo[] FieldInfoArray = typeof(Vertex).GetFields();
-            
-            
             VertexLength = FieldInfoArray.Length;
 
             int RelativeOffset = 0;
