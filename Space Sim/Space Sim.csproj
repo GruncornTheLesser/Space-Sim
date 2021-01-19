@@ -65,7 +65,7 @@
 
   <ItemGroup>
     <None Include="Classes\_Removed\_RemovedMaths.cs" />
-    <None Include="Classes\Graphics\Shaders\Shader.cs" />
+    <None Include="Classes\Graphics\Shaders\Shader Program.cs" />
   </ItemGroup>
 
 </Project>

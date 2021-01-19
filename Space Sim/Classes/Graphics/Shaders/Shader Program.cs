@@ -17,40 +17,12 @@ namespace Graphics.Shaders
      * idk how i want to deal with textures
      */
 
-    /// <summary>
-    /// parameter type qualifier
-    /// </summary>
-    public enum TypeQualifier
-    {
-        Uniform,
-        Vertex
-    }
-    public enum ValueType
-    {
-        Float,
-        Int,
-        Vec2,
-        Vec3,
-        Vec4,
-        Mat2,
-        Mat3,
-        Mat4,
-        Texture
-    }
-    public enum ParameterType
-    {
-        Fragment,
-        Vertex,
-        Both
-    }
 
     class ShaderProgram<Vertex> : Collection<Iparameter>
     {
         private int ProgramHandle;
-
         private string vertpath;
         private string fragpath;
-
         public string VertexShaderPath
         {
             set
@@ -75,27 +47,35 @@ namespace Graphics.Shaders
                 return vertpath;
             }
         }
-        
-        public bool ready;
 
-        public ShaderProgram(string VertexPath, string FragPath) 
+        public PolygonMode PolygonMode = PolygonMode.Fill;
+        public MaterialFace MaterialFace = MaterialFace.Front;
+
+
+
+        public bool ready = false;
+
+        public ShaderProgram(string VertexPath, string FragmentPath) 
         {
-            ready = false;
-
+            vertpath = VertexPath;
+            fragpath = FragmentPath;
         }
         public void UseProgram() 
         {
+            #if ready
+            #warning Program is not ready to be used. Program shader path has been changed or parameter has been added. Program must be compiled to see changes.
+            #endif
 
-#if ready
-#warning Program is not ready to be used. Program shader path has been changed or parameter has been added. Program must be compiled again to see changed
-#endif
-
+            
+            GL.PolygonMode(MaterialFace, PolygonMode);
             GL.UseProgram(ProgramHandle);
-
+            foreach (Iparameter P in this) P.UpdateUniform();
 
         }
         public void CompileProgram() 
         {
+            GL.DeleteProgram(ProgramHandle);
+            
             // creates new program
             ProgramHandle = GL.CreateProgram();
 
@@ -155,6 +135,7 @@ namespace Graphics.Shaders
 
             return NewShaderHandle;
         }
+    
     }
 
    

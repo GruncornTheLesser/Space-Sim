@@ -65,7 +65,7 @@ namespace Graphics
         private int VertexLength; // number of data points in vertex
 
         public PolygonMode PolygonMode = PolygonMode.Fill;
-
+        public MaterialFace MaterialFace = MaterialFace.Front;
         public bool FixToScreenSpace = false;
 
 
@@ -78,13 +78,7 @@ namespace Graphics
             TextureHandle = Init_Textures(Texture);
             ProgramHandle = Init_Program(VertexShader, FragmentShader);
 
-            // fixes texture at edges
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
 
-            // makes pixel perfect
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
         }
         public RenderObject2D(float Rotation, float ScaleX, float ScaleY, float PositionX, float PositionY, Vertex[] Vertices, string Texture, string VertexShader, string FragmentShader) : base(Rotation, new Vector2(ScaleX, ScaleY), new Vector2(PositionX, PositionY))
         {
@@ -95,13 +89,6 @@ namespace Graphics
             TextureHandle = Init_Textures(Texture);
             ProgramHandle = Init_Program(VertexShader, FragmentShader);
 
-            // fixes texture at edges
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
-
-            // makes pixel perfect
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
         }
         
         /// <summary>
@@ -260,7 +247,14 @@ namespace Graphics
             GL.BindTexture(TextureTarget.Texture2D, Handle);
             // level ???, offset x, offset y, width, height, format, type, serialized data
             GL.TextureSubImage2D(Handle, 0, 0, 0, width, height, PixelFormat.Rgba, PixelType.Float, data);
+            
+            // fixes texture at edges
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
 
+            // makes pixel perfect
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
             return Handle;
         }
         
@@ -295,9 +289,7 @@ namespace Graphics
 
         
         
-        public virtual void OnMouseDown(MouseButtonEventArgs e) { }
-        public virtual void OnMouseUp(MouseButtonEventArgs e) { }
-        public virtual void OnMouseMove(MouseMoveEventArgs e) { }
+
 
 
         /// <summary>
@@ -307,7 +299,7 @@ namespace Graphics
         /// <param name="Time"></param>
         public void Render(Matrix3 Camera, float Time)
         {
-            //GL.PolygonMode(MaterialFace.Front, PolygonMode);
+            GL.PolygonMode(MaterialFace, PolygonMode);
             // tell openGL to use this objects program
             GL.UseProgram(ProgramHandle);
 
@@ -347,5 +339,11 @@ namespace Graphics
         /// </summary>
         /// <param name="delta">Time since process was last called.</param>
         public virtual void Process(float delta) { }
+
+
+
+        public virtual void OnMouseDown(MouseButtonEventArgs e) { }
+        public virtual void OnMouseUp(MouseButtonEventArgs e) { }
+        public virtual void OnMouseMove(MouseMoveEventArgs e) { }
     }
 }

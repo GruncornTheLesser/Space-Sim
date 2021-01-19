@@ -6,6 +6,41 @@ using OpenTK.Mathematics;
 
 namespace Graphics.Shaders
 {
+    /* There is probably a better way to do this
+     * I tried for a while to get it into the same class
+     * but although this is huge and gross it does what its supposed to relatively simply
+     * 
+     * The problems i was dealing with types at run time in c# is painful
+     * it also needed to be iterable hence the abstract Iparameter class
+     * 
+     * I might try and trim it down becuase its might end up expensive in memory
+     */
+
+    public enum TypeQualifier
+    {
+        Uniform,
+        Vertex
+    }
+    public enum ValueType
+    {
+        Float,
+        Int,
+        Vec2,
+        Vec3,
+        Vec4,
+        Mat2,
+        Mat3,
+        Mat4,
+        Texture
+    }
+    public enum ParameterType
+    {
+        Fragment,
+        Vertex,
+        Both
+    }
+
+
     /// <summary>
     /// Iterable parameter abstract class.
     /// </summary>
@@ -357,7 +392,7 @@ namespace Graphics.Shaders
              * 
              * idk its weird openGL stuff. 
              */
-            if (_typequalifier == TypeQualifier.Uniform) GL.BindTextures(0, 1, new int[1] { valuepointer });
+            if (_typequalifier == TypeQualifier.Uniform) GL.BindTextures(location, 1, new int[1] { valuepointer });
         }
     }
 
