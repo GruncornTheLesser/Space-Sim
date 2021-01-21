@@ -7,41 +7,52 @@ using OpenTK.Mathematics;
 using OpenTK.Graphics.OpenGL4;
 using System.Drawing;
 using OpenTK.Windowing.Common;
+using Shaders;
+/* OpenGL Hardware Pipeline
+ * ====================CPU====================
+ * yo OpenGL, go draw this cool stuff.
+ *                      V
+ * ====================GPU====================
+ * Vertex Shader - code to animate and position each vertex
+ *                      V
+ [X]Tesselation Control (optional) - specify how many vertices to generate
+ *                      V
+ [X]Tesselation (optional) - generate vertices
+ *                      V
+ [X]Tesselation Evaluation Shader (optional) position new vertices
+ *                      V
+ [X]Geometry Shader (optional) - generate or delete geometry
+ *                      V
+ * Clipping - remove stuff thats out of frame
+ *                      V
+ * Rasterization - primitive triangles are turned into 2d bitmap of pixels
+ *      V
+ * Fragment Shader - code to colour each pixel
+ *                      V
+ [~] Blending - overlapping pixels are blended into 1
+ *                      V
+ [~] Frame Buffer - loads 2d image into frame buffer
+ * ==================RETURN===================
+ [X] means not doing it
+ [~] means its done by openGl 
+ */
 
-/*
-* OpenGL Hardware Pipeline
-* ====================CPU====================
-* yo OpenGL, go draw this cool stuff.
-*                      V
-* ====================GPU====================
-* Vertex Shader - code to animate and position each vertex
-*                      V
-[X]Tesselation Control (optional) - specify how many vertices to generate
-*                      V
-[X]Tesselation (optional) - generate vertices
-*                      V
-[X]Tesselation Evaluation Shader (optional) position new vertices
-*                      V
-[X]Geometry Shader (optional) - generate or delete geometry
-*                      V
-* Clipping - remove stuff thats out of frame
-*                      V
-* Rasterization - primitive triangles are turned into 2d bitmap of pixels
-*      V
-* Fragment Shader - code to colour each pixel
-*                      V
-[~] Blending - overlapping pixels are blended into 1
-*                      V
-[~] Frame Buffer - loads 2d image into frame buffer
-* ==================RETURN===================
-[X] means not doing it
-[~] means its done by openGl 
-*
-* A Handle is a pointer for openGL. I think. it points to a location in memory.
-* unmanged is any of the follwing types: Sbyte, byte, short, ushort, int, uint, long, ulong, char, float, double, decimal, or bool
-* 
-* 
-*/
+/* A Handle is a pointer for openGL. I think. it points to a location in memory.
+ * 
+ * managed vs unmanaged code:
+ * managed code is executed with CLR which is responsible for managing memory, performing type verification and garbage collection
+ * unmanaged code is executed outside CLR
+ * unmanaged code is declared with the unsafe keyword
+ * 
+ * it means the programmer must:
+ * make sure the casting is done right
+ * calling the memory allocation function
+ * making sure the memory is released when the work is done
+ * 
+ * fixed:
+ * a fixed statement can be applied to a pointer which means the CLR garbage collector ignores the pointer
+ * I think it still overwrites the value.
+ */
 
 
 /* THING TO DO:
@@ -58,53 +69,85 @@ namespace Graphics
         private readonly int VertexArrayHandle;
         private readonly int VertexBufferHandle;
         private readonly int TextureHandle; 
-        private readonly int ProgramHandle;
 
         private readonly int VertexCount; // number of vertices
         private readonly int VertexSize; // size of vertex in bytes
         private int VertexLength; // number of data points in vertex
 
+        private ShaderProgram ShaderProgram;
+
         public PolygonMode PolygonMode = PolygonMode.Fill;
         public MaterialFace MaterialFace = MaterialFace.Front;
+        
         public bool FixToScreenSpace = false;
 
+
+        
 
         public RenderObject2D(float Rotation, Vector2 Scale, Vector2 Position, Vertex[] Vertices, string Texture, string VertexShader, string FragmentShader) : base(Rotation, Scale, Position)
         {
             this.VertexCount = Vertices.Length;
-
+            ShaderProgram = new ShaderProgram(VertexShader, FragmentShader);
+            
             Init_BufferArray(out VertexArrayHandle, out VertexBufferHandle, out VertexSize, Vertices);
-
             TextureHandle = Init_Textures(Texture);
-            ProgramHandle = Init_Program(VertexShader, FragmentShader);
 
+            Matrix3 M = Transform_Matrix;
+            unsafe
+            {
+                fixed (Matrix3* TM = &Transform_Matrix) 
+                {
+
+                    ShaderProgram.AddParameter(new Mat3Uniform(ShaderTarget.Vertex, "camera", &M));
+                    ShaderProgram.AddParameter(new Mat3Uniform(ShaderTarget.Vertex, "transform", TM));
+                    ShaderProgram.AddParameter(new TextureUniform(ShaderTarget.Fragment, "Texture", TextureHandle));
+
+                }
+            }            
+
+            ShaderProgram.CompileProgram();
+            
+            
+            //ProgramHandle = Init_Program(VertexShader, FragmentShader);
+            
+            
+            //ShaderProgram["Camera"] = new Mat3Parameter(ParameterType.Vertex, TypeQualifier.Uniform, Shaders.ValueType.Mat3, "Camera", &Test);
 
         }
         public RenderObject2D(float Rotation, float ScaleX, float ScaleY, float PositionX, float PositionY, Vertex[] Vertices, string Texture, string VertexShader, string FragmentShader) : base(Rotation, new Vector2(ScaleX, ScaleY), new Vector2(PositionX, PositionY))
         {
             this.VertexCount = Vertices.Length;
-
+            ShaderProgram = new ShaderProgram(VertexShader, FragmentShader);
             Init_BufferArray(out VertexArrayHandle, out VertexBufferHandle, out VertexSize, Vertices);
-            
+
             TextureHandle = Init_Textures(Texture);
-            ProgramHandle = Init_Program(VertexShader, FragmentShader);
+            //ProgramHandle = Init_Program(VertexShader, FragmentShader);
+            
 
         }
-        
+
         /// <summary>
         /// recognises a new attribute in an array for passing to the buffer.
         /// </summary>
         /// <param name="ArrayHandle">The OpenGL Handle ID.</param>
         /// <param name="Size">The number of elements contained in this attirbute.</param>
-        /// <param name="Index">The index when delivered to the shader.</param>
+        /// <param name="Location">The index when delivered to the shader.</param>
         /// <param name="Offset">The relative offset in bytes of where the attribute starts.</param>
-        private void LoadBufferAttribute(int ArrayHandle, int Size, int Index, ref int Offset)
+        private void LoadBufferAttribute(string Name, Shaders.ValueType Type, int ArrayHandle, int Size, int Location, ref int Offset)
         {
-            GL.VertexArrayAttribBinding(ArrayHandle, Index, 0);
-            GL.EnableVertexArrayAttrib(ArrayHandle, Index);
+            GL.VertexArrayAttribBinding(ArrayHandle, Location, 0);
+            GL.EnableVertexArrayAttrib(ArrayHandle, Location);
             // Handle, index when delivered to shader, number of elements, contains floats, already normalized so false, relative offset from 0 in bytes = 0 
-            GL.VertexArrayAttribFormat(ArrayHandle, Index, Size, VertexAttribType.Float, false, Offset);
-            Offset += Size * 4; // number of elements * float size 
+            GL.VertexArrayAttribFormat(ArrayHandle, Location, Size, VertexAttribType.Float, false, Offset);
+            Offset += Size * 4; // number of elements * float size
+
+
+            ShaderProgram.AddParameter(new VertexParameter(ShaderTarget.Vertex, Type, Name));
+            
+
+
+            
+             
         }
         
         /// <summary>
@@ -140,16 +183,16 @@ namespace Graphics
             VertexLength = FieldInfoArray.Length;
 
             int RelativeOffset = 0;
-            for (int i = 0; i < VertexLength; i++)
+            for (int location = 0; location < VertexLength; location++)
             {
-                Type T = FieldInfoArray[i].FieldType;
-
-                if (T == typeof(Vector2)) LoadBufferAttribute(ArrayHandle, 2, i, ref RelativeOffset);
-                else if (T == typeof(Vector3)) LoadBufferAttribute(ArrayHandle, 3, i, ref RelativeOffset);
-                else if (T == typeof(Vector4)) LoadBufferAttribute(ArrayHandle, 4, i, ref RelativeOffset);
-                else if (T == typeof(Color4)) LoadBufferAttribute(ArrayHandle, 4, i, ref RelativeOffset);
-                else if (T == typeof(float)) LoadBufferAttribute(ArrayHandle, 1, i, ref RelativeOffset);
-                else if (T == typeof(Int32)) LoadBufferAttribute(ArrayHandle, 1, i, ref RelativeOffset);
+                Type T = FieldInfoArray[location].FieldType;
+                string N = FieldInfoArray[location].Name;
+                if (T == typeof(Vector2)) LoadBufferAttribute(N, Shaders.ValueType.Vec2, ArrayHandle, 2, location, ref RelativeOffset);
+                else if (T == typeof(Vector3)) LoadBufferAttribute(N, Shaders.ValueType.Vec3, ArrayHandle, 3, location, ref RelativeOffset);
+                else if (T == typeof(Vector4)) LoadBufferAttribute(N, Shaders.ValueType.Vec4, ArrayHandle, 4, location, ref RelativeOffset);
+                else if (T == typeof(Color4)) LoadBufferAttribute(N, Shaders.ValueType.Vec4, ArrayHandle, 4, location, ref RelativeOffset);
+                else if (T == typeof(float)) LoadBufferAttribute(N, Shaders.ValueType.Float, ArrayHandle, 1, location, ref RelativeOffset);
+                else if (T == typeof(Int32)) LoadBufferAttribute(N, Shaders.ValueType.Int, ArrayHandle, 1, location, ref RelativeOffset);
                 else throw new Exception("RenderObject cannot load type " + T.ToString() + " into buffer reliably"); 
                 // shouldnt be needed as its already known that its unmanaged
 
@@ -287,11 +330,6 @@ namespace Graphics
             return Serialized_Data;
         }
 
-        
-        
-
-
-
         /// <summary>
         /// Show this object on the screen.
         /// </summary>
@@ -301,35 +339,23 @@ namespace Graphics
         {
             GL.PolygonMode(MaterialFace, PolygonMode);
             // tell openGL to use this objects program
-            GL.UseProgram(ProgramHandle);
+            ShaderProgram.UseProgram();
+            
+            //GL.UseProgram(ProgramHandle);
 
             // pass in uniforms
             
             // matrix transforms
-            GL.UniformMatrix3(VertexLength, true, ref Transform_Matrix); // location 3
+            //GL.UniformMatrix3(VertexLength, true, ref Transform_Matrix); // location 3
 
-            GL.UniformMatrix3(VertexLength + 1, true, ref Camera); // location 4
+            //GL.UniformMatrix3(VertexLength + 1, true, ref Camera); // location 4
 
             // shader variables
-            GL.Uniform1(VertexLength + 2, Time); // location 5
-            GL.Uniform1(VertexLength + 3, 60f); // location 6
+            //GL.Uniform1(VertexLength + 2, Time); // location 5
+            //GL.Uniform1(VertexLength + 3, 60f); // location 6
 
-            /* https://opentk.net/learn/chapter1/6-multiple-textures.html
-             * Sampler2D variable is uniform but isn't assigned the same way
-             * this is assigned a location value with a texture sampler 
-             * known as a texture unit.
-             * 
-             * allows use of more than 1 texture to be passed.
-             * 
-             * This is then bound with BindTextures() to the current active 
-             * texture unit.
-             * 
-             * idk its weird openGL stuff. 
-             */
-            
-            // only have one texture right now it would be cool to have normal or AO maps etc
-            
-            GL.BindTextures(0, 1, new int[1] { TextureHandle });
+            //GL.BindTextures(0, 1, new int[1] { TextureHandle });
+
             GL.BindVertexArray(VertexArrayHandle);
             GL.DrawArrays(PrimitiveType.Triangles, 0, VertexCount);
         }

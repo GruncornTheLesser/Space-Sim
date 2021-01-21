@@ -5,7 +5,9 @@ using System.Collections.ObjectModel;
 using System.Text;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
-namespace Graphics.Shaders
+using System.Collections;
+
+namespace Shaders
 {
     /* Unfinished
      * very much a thing to do.
@@ -18,11 +20,14 @@ namespace Graphics.Shaders
      */
 
 
-    class ShaderProgram<Vertex> : Collection<Iparameter>
+    unsafe class ShaderProgram
     {
         private int ProgramHandle;
         private string vertpath;
         private string fragpath;
+
+        private List<IParameter> Parameters;
+
         public string VertexShaderPath
         {
             set
@@ -48,34 +53,38 @@ namespace Graphics.Shaders
             }
         }
 
+        public int Count => throw new NotImplementedException();
+
+        public bool IsReadOnly => throw new NotImplementedException();
+
         public PolygonMode PolygonMode = PolygonMode.Fill;
         public MaterialFace MaterialFace = MaterialFace.Front;
 
-
-
         public bool ready = false;
 
-        public ShaderProgram(string VertexPath, string FragmentPath) 
+        public ShaderProgram(string VertexPath, string FragmentPath)
         {
+            Parameters = new List<IParameter>();
             vertpath = VertexPath;
             fragpath = FragmentPath;
         }
-        public void UseProgram() 
+        public void UseProgram()
         {
-            #if ready
-            #warning Program is not ready to be used. Program shader path has been changed or parameter has been added. Program must be compiled to see changes.
-            #endif
-
-            
             GL.PolygonMode(MaterialFace, PolygonMode);
             GL.UseProgram(ProgramHandle);
-            foreach (Iparameter P in this) P.UpdateUniform();
-
+            foreach (IParameter P in Parameters) P.UpdateUniform();
         }
-        public void CompileProgram() 
+
+        public void AddParameter(IParameter parameter)
+        {
+            Parameters.Add(parameter);
+        }
+
+
+        public void CompileProgram()
         {
             GL.DeleteProgram(ProgramHandle);
-            
+
             // creates new program
             ProgramHandle = GL.CreateProgram();
 
@@ -103,26 +112,26 @@ namespace Graphics.Shaders
             ready = true;
         }
 
-        private int Load_Shader(ShaderType shadertype, string path) 
+        private int Load_Shader(ShaderType shadertype, string path)
         {
             // create new shader object in OpenGL
             int NewShaderHandle = GL.CreateShader(shadertype);
 
             // get code from file
-            string code = "#version 450 core\n";
-            
+            string code = $"#version 450 core{Environment.NewLine}";
+
             // writes initial variable definition at start of script
             int location = 0;
             if (shadertype == ShaderType.VertexShader)
             {
-                foreach (Iparameter P in this) P.GenVertDef(ref location);
+                foreach (IParameter P in Parameters) code += P.GenVertDef(ref location);
             }
             else
             {
-                foreach (Iparameter P in this) P.GenFragDef(ref location);
+                foreach (IParameter P in Parameters) code += P.GenFragDef(ref location);
             }
             code += File.ReadAllText(path);
-            
+
             // attaches shader and code
             GL.ShaderSource(NewShaderHandle, code);
 
@@ -131,13 +140,10 @@ namespace Graphics.Shaders
 
             // checks if compilation worked
             string info = GL.GetShaderInfoLog(NewShaderHandle);
-            if (!string.IsNullOrWhiteSpace(info)) throw new Exception($"Failed to compile {shadertype} shader: {info}");
+            if (!string.IsNullOrWhiteSpace(info)) throw new Exception($"Failed to compile {shadertype}{Environment.NewLine}{code}{Environment.NewLine}{info}");
 
             return NewShaderHandle;
         }
-    
     }
-
-   
 }
 

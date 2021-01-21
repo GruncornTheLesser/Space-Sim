@@ -5,6 +5,7 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <RootNamespace>Space_Sim</RootNamespace>
     <UseWindowsForms>true</UseWindowsForms>
+    <StartupObject>Space_Sim.Program</StartupObject>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

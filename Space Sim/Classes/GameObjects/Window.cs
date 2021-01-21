@@ -68,6 +68,8 @@ namespace GameObjects
 
             // remove later
             RenderObjects2D.Add(new RenderObject2D<Vertex2D>(0.0f, new Vector2(48f, 48f), new Vector2(0, 0), SquareMesh, "4 Mars TS", "Default", "Default"));
+            
+            
             // allows blending ie semi transparent stuff
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
