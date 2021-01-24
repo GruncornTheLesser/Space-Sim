@@ -20,13 +20,17 @@ namespace Shaders
      */
 
 
-    unsafe class ShaderProgram
+
+
+
+
+    class ShaderProgram
     {
         private int ProgramHandle;
         private string vertpath;
         private string fragpath;
 
-        private List<IParameter> Parameters;
+        private List<Iparameter> Parameters;
 
         public string VertexShaderPath
         {
@@ -53,18 +57,14 @@ namespace Shaders
             }
         }
 
-        public int Count => throw new NotImplementedException();
-
-        public bool IsReadOnly => throw new NotImplementedException();
-
         public PolygonMode PolygonMode = PolygonMode.Fill;
-        public MaterialFace MaterialFace = MaterialFace.Front;
+        public MaterialFace MaterialFace = MaterialFace.FrontAndBack;
 
         public bool ready = false;
 
         public ShaderProgram(string VertexPath, string FragmentPath)
         {
-            Parameters = new List<IParameter>();
+            Parameters = new List<Iparameter>();
             vertpath = VertexPath;
             fragpath = FragmentPath;
         }
@@ -72,10 +72,10 @@ namespace Shaders
         {
             GL.PolygonMode(MaterialFace, PolygonMode);
             GL.UseProgram(ProgramHandle);
-            foreach (IParameter P in Parameters) P.UpdateUniform();
+            foreach (Iparameter P in Parameters) P.UpdateUniform();
         }
 
-        public void AddParameter(IParameter parameter)
+        public void AddParameter(Iparameter parameter)
         {
             Parameters.Add(parameter);
         }
@@ -124,11 +124,11 @@ namespace Shaders
             int location = 0;
             if (shadertype == ShaderType.VertexShader)
             {
-                foreach (IParameter P in Parameters) code += P.GenVertDef(ref location);
+                foreach (Iparameter P in Parameters) code += P.GenVertDef(ref location);
             }
             else
             {
-                foreach (IParameter P in Parameters) code += P.GenFragDef(ref location);
+                foreach (Iparameter P in Parameters) code += P.GenFragDef(ref location);
             }
             code += File.ReadAllText(path);
 

@@ -9,6 +9,7 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 using OpenTK.Input;
 using OpenTK.Mathematics;
 using Graphics;
+using Shaders;
 
 namespace GameObjects
 {
@@ -69,7 +70,10 @@ namespace GameObjects
             // remove later
             RenderObjects2D.Add(new RenderObject2D<Vertex2D>(0.0f, new Vector2(48f, 48f), new Vector2(0, 0), SquareMesh, "4 Mars TS", "Default", "Default"));
             
-            
+            RenderObjects2D[0].ShaderProgram.AddParameter(new Mat3Uniform(ShaderTarget.Vertex, "camera", Camera.GetTransform, Camera.SetTransform));
+            RenderObjects2D[0].ShaderProgram.AddParameter(new FloatUniform(ShaderTarget.Both, "Time", () => Time, value => { Time = value; }));
+            RenderObjects2D[0].ShaderProgram.CompileProgram();
+
             // allows blending ie semi transparent stuff
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);

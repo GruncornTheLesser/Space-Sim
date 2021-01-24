@@ -19,7 +19,7 @@ namespace GameObjects
      */
 
 
-
+    /*
     class Button : RenderObject2D<Vertex2D>
     {
         List<Vector2> HitBoxMesh;
@@ -56,4 +56,5 @@ namespace GameObjects
             else return false;
         }
     }
+    */
 }

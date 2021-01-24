@@ -59,6 +59,8 @@ using Shaders;
  * Z index to decide which goes in front. - Mostly a change to window. - useful especially for buttons which must be in front
  * Write better shaders for planets - could do some 3d mapping
  * FixToScreenSpace 
+ * 
+ * Change Init_BufferArray() to use switch instead of if statements
  */
 
 
@@ -74,7 +76,7 @@ namespace Graphics
         private readonly int VertexSize; // size of vertex in bytes
         private int VertexLength; // number of data points in vertex
 
-        private ShaderProgram ShaderProgram;
+        public ShaderProgram ShaderProgram;
 
         public PolygonMode PolygonMode = PolygonMode.Fill;
         public MaterialFace MaterialFace = MaterialFace.Front;
@@ -92,26 +94,8 @@ namespace Graphics
             Init_BufferArray(out VertexArrayHandle, out VertexBufferHandle, out VertexSize, Vertices);
             TextureHandle = Init_Textures(Texture);
 
-            Matrix3 M = Transform_Matrix;
-            unsafe
-            {
-                fixed (Matrix3* TM = &Transform_Matrix) 
-                {
-
-                    ShaderProgram.AddParameter(new Mat3Uniform(ShaderTarget.Vertex, "camera", &M));
-                    ShaderProgram.AddParameter(new Mat3Uniform(ShaderTarget.Vertex, "transform", TM));
-                    ShaderProgram.AddParameter(new TextureUniform(ShaderTarget.Fragment, "Texture", TextureHandle));
-
-                }
-            }            
-
-            ShaderProgram.CompileProgram();
-            
-            
-            //ProgramHandle = Init_Program(VertexShader, FragmentShader);
-            
-            
-            //ShaderProgram["Camera"] = new Mat3Parameter(ParameterType.Vertex, TypeQualifier.Uniform, Shaders.ValueType.Mat3, "Camera", &Test);
+            ShaderProgram.AddParameter(new Mat3Uniform(ShaderTarget.Vertex, "transform", this.GetTransform, this.SetTransform));
+            ShaderProgram.AddParameter(new TextureUniform(ShaderTarget.Fragment, "Texture", TextureHandle));
 
         }
         public RenderObject2D(float Rotation, float ScaleX, float ScaleY, float PositionX, float PositionY, Vertex[] Vertices, string Texture, string VertexShader, string FragmentShader) : base(Rotation, new Vector2(ScaleX, ScaleY), new Vector2(PositionX, PositionY))
@@ -133,7 +117,7 @@ namespace Graphics
         /// <param name="Size">The number of elements contained in this attirbute.</param>
         /// <param name="Location">The index when delivered to the shader.</param>
         /// <param name="Offset">The relative offset in bytes of where the attribute starts.</param>
-        private void LoadBufferAttribute(string Name, Shaders.ValueType Type, int ArrayHandle, int Size, int Location, ref int Offset)
+        private void LoadBufferAttribute<T>(string Name, int ArrayHandle, int Size, int Location, ref int Offset)
         {
             GL.VertexArrayAttribBinding(ArrayHandle, Location, 0);
             GL.EnableVertexArrayAttrib(ArrayHandle, Location);
@@ -141,13 +125,9 @@ namespace Graphics
             GL.VertexArrayAttribFormat(ArrayHandle, Location, Size, VertexAttribType.Float, false, Offset);
             Offset += Size * 4; // number of elements * float size
 
-
-            ShaderProgram.AddParameter(new VertexParameter(ShaderTarget.Vertex, Type, Name));
-            
-
-
-            
-             
+            // adds parameter in shader program.
+            // this will add it to the scripts.
+            ShaderProgram.AddParameter(new VertexParameter<T>(ShaderTarget.Vertex, Name));
         }
         
         /// <summary>
@@ -159,26 +139,27 @@ namespace Graphics
         /// <param name="Vertices">The array of vertices.</param>
         private void Init_BufferArray(out int ArrayHandle, out int BufferHandle, out int VertexSize, Vertex[] Vertices)
         {
-            /* struct needs to be 'unmanaged' to use sizeof()
-             * dont really know what that means but whatever
-             * its also unsafe meaning it could potential have different results on different systems
-             * it should be fine as long as the vertex doesnt contain strings? and maybe not char?. 
-             * floats, ints and bytes are safe.
+            /* using system.reflection allows me to get the size of a struct using sizeof()
+             * struct needs to be 'unmanaged' to use sizeof()
              */
             unsafe { VertexSize = sizeof(Vertex); }
             
+            // generate new opengl handles
             ArrayHandle = GL.GenVertexArray();
             BufferHandle = GL.GenBuffer();
             
+            // bind new array and buffer
             GL.BindVertexArray(ArrayHandle);
             GL.BindBuffer(BufferTarget.ArrayBuffer, BufferHandle);
+            
             // create new buffer storage of vertice data
             GL.NamedBufferStorage(BufferHandle, VertexSize * Vertices.Length, Vertices, BufferStorageFlags.MapWriteBit);
 
 
-            /* iterates through struct members
-             * this is gross
-             */
+            // iterates through struct members
+
+
+            // can do with switch -> looks nicer
             FieldInfo[] FieldInfoArray = typeof(Vertex).GetFields();
             VertexLength = FieldInfoArray.Length;
 
@@ -186,92 +167,20 @@ namespace Graphics
             for (int location = 0; location < VertexLength; location++)
             {
                 Type T = FieldInfoArray[location].FieldType;
-                string N = FieldInfoArray[location].Name;
-                if (T == typeof(Vector2)) LoadBufferAttribute(N, Shaders.ValueType.Vec2, ArrayHandle, 2, location, ref RelativeOffset);
-                else if (T == typeof(Vector3)) LoadBufferAttribute(N, Shaders.ValueType.Vec3, ArrayHandle, 3, location, ref RelativeOffset);
-                else if (T == typeof(Vector4)) LoadBufferAttribute(N, Shaders.ValueType.Vec4, ArrayHandle, 4, location, ref RelativeOffset);
-                else if (T == typeof(Color4)) LoadBufferAttribute(N, Shaders.ValueType.Vec4, ArrayHandle, 4, location, ref RelativeOffset);
-                else if (T == typeof(float)) LoadBufferAttribute(N, Shaders.ValueType.Float, ArrayHandle, 1, location, ref RelativeOffset);
-                else if (T == typeof(Int32)) LoadBufferAttribute(N, Shaders.ValueType.Int, ArrayHandle, 1, location, ref RelativeOffset);
-                else throw new Exception("RenderObject cannot load type " + T.ToString() + " into buffer reliably"); 
+                string Name = FieldInfoArray[location].Name;
+                if (T == typeof(Vector2)) LoadBufferAttribute<Vector2>(Name, ArrayHandle, 2, location, ref RelativeOffset);
+                else if (T == typeof(Vector3)) LoadBufferAttribute<Vector3>(Name, ArrayHandle, 3, location, ref RelativeOffset);
+                else if (T == typeof(Vector4)) LoadBufferAttribute<Vector4>(Name, ArrayHandle, 4, location, ref RelativeOffset);
+                else if (T == typeof(Color4)) LoadBufferAttribute<Vector4>(Name, ArrayHandle, 4, location, ref RelativeOffset);
+                else if (T == typeof(float)) LoadBufferAttribute<float>(Name, ArrayHandle, 1, location, ref RelativeOffset);
+                else if (T == typeof(Int32)) LoadBufferAttribute<Int32>(Name, ArrayHandle, 1, location, ref RelativeOffset);
+                else throw new Exception("RenderObject failed to load type " + T.ToString() + " into buffer array"); 
                 // shouldnt be needed as its already known that its unmanaged
 
             }
             // link the vertex array and buffer and provide the step size(stride) as size of Vertex
             GL.VertexArrayVertexBuffer(ArrayHandle, 0, BufferHandle, IntPtr.Zero, VertexSize);
         }
-
-        
-        
-        /// <summary>
-        /// compiles and error-checks shaders and attaches them together in a program in OpenGL.
-        /// </summary>
-        /// <param name="VertName">The name of the vertex shader file in:@\Graphics\Shaders\[name].shader</param>
-        /// <param name="FragName">The name of the fragment shader file in:@\Graphics\Shaders\[name].shader</param>
-        /// <returns>The program handle ID for OpenGL.</returns>
-        private int Init_Program(string VertName, string FragName)
-        {
-            // creates new program
-            int Handle = GL.CreateProgram();
-
-            // compile new shaders
-            int Vert = Load_Shader(ShaderType.VertexShader, @"Shaders\" + VertName + "Vert.shader");
-            int Frag = Load_Shader(ShaderType.FragmentShader, @"Shaders\" + FragName + "Frag.shader");
-
-            // attach new shaders
-            GL.AttachShader(Handle, Vert);
-            GL.AttachShader(Handle, Frag);
-
-            // link new shaders
-            GL.LinkProgram(Handle);
-
-            // check for error linking shaders to program
-            string info = GL.GetProgramInfoLog(Handle);
-            if (!string.IsNullOrWhiteSpace(info)) throw new Exception($"Failed to link shaders to program: {info}");
-
-            // detach and delete both shaders
-            GL.DetachShader(Handle, Vert);
-            GL.DetachShader(Handle, Frag);
-            GL.DeleteShader(Vert);
-            GL.DeleteShader(Frag);
-
-            return Handle;
-        }
-        
-        /// <summary>
-        /// Loads code in file and compiles it.
-        /// </summary>
-        /// <param name="type">the type of shader i.e. vertex or fragment</param>
-        /// <param name="path">The file path to the code.</param>
-        /// <returns>The shader handle ID for OpenGL.</returns>
-        private int Load_Shader(ShaderType type, string path)
-        {
-            // THING TO DO:
-            // should write in and out variables in code automatically by whats in the vertex
-            // or just find a better way to do it. this works as long as i dont need any new parameters in the shader.
-            // could create a shader object which holds the parameters of the vertex and uniforms that need to be passed.
-
-
-            // create new shader object in OpenGL
-            int NewShaderHandle = GL.CreateShader(type);
-
-            // get code from file
-            string code = File.ReadAllText(path);
-
-            // attaches shader and code
-            GL.ShaderSource(NewShaderHandle, code);
-
-            // compiles shader code
-            GL.CompileShader(NewShaderHandle);
-
-            // checks if compilation worked
-            string info = GL.GetShaderInfoLog(NewShaderHandle);
-            if (!string.IsNullOrWhiteSpace(info)) throw new Exception($"Failed to compile {type} shader: {info}");
-
-            return NewShaderHandle;
-        }
-
-
 
         /// <summary>
         /// opens image file and creates texture.
