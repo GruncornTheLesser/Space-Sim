@@ -1,18 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Desktop;
+using Shaders;
+
 namespace Graphics
 {
     class Node2D
     {
         public Matrix3 Transform_Matrix;
-        
-        // used for deep copy object. sets and gets the transform_Matrix.
-        public Func<Matrix3> GetTransform;
-        public Action<Matrix3> SetTransform;
+        public DeepCopy<Matrix3> TransformCopy;
 
         private float rotation;
         private Vector2 scale;
@@ -33,7 +31,6 @@ namespace Graphics
                 return rotation;
             }
         }
-        
         public Vector2 Scale
         {
             set
@@ -77,8 +74,9 @@ namespace Graphics
                     scale.X * MathF.Sin(rotation), scale.Y * MathF.Cos(rotation), position.Y,
                     0, 0, 1
                     );
-            GetTransform = new Func<Matrix3>(() => Transform_Matrix);
-            SetTransform = new Action<Matrix3>(value => { Transform_Matrix = value; });
+
+            // set up a deep copy of the transform matrix for shader uniforms
+            TransformCopy = new DeepCopy<Matrix3>(() => Transform_Matrix, value => { Transform_Matrix = value; });
         }
         public Node2D(float rotation, float scaleX, float scaleY, float positionX, float positionY)
         {
@@ -90,8 +88,8 @@ namespace Graphics
                     scaleX * MathF.Sin(rotation), scaleY * MathF.Cos(rotation), positionY,
                     0, 0, 1
                     );
-            GetTransform = new Func<Matrix3>(() => Transform_Matrix);
-            SetTransform = new Action<Matrix3>(value => { Transform_Matrix = value; });
+            // set up a deep copy of the transform matrix for shader uniforms
+            TransformCopy = new DeepCopy<Matrix3>(() => Transform_Matrix, value => { Transform_Matrix = value; });
         }
     }
 

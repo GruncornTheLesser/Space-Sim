@@ -37,19 +37,21 @@ using Shaders;
  [~] means its done by openGl 
  */
 
-/* A Handle is a pointer for openGL. I think. it points to a location in memory.
+/* A Handle is a pointer for openGL. i kept the name because it made it simpler for me to understand.
  * 
  * managed vs unmanaged code:
  * managed code is executed with CLR which is responsible for managing memory, performing type verification and garbage collection
  * unmanaged code is executed outside CLR
  * unmanaged code is declared with the unsafe keyword
- * 
- * it means the programmer must:
+ */
+
+/* it means the programmer must:
  * make sure the casting is done right
  * calling the memory allocation function
  * making sure the memory is released when the work is done
- * 
- * fixed:
+ */ 
+
+/* fixed:
  * a fixed statement can be applied to a pointer which means the CLR garbage collector ignores the pointer
  * I think it still overwrites the value.
  */
@@ -60,19 +62,18 @@ using Shaders;
  * Write better shaders for planets - could do some 3d mapping
  * FixToScreenSpace 
  * 
- * Change Init_BufferArray() to use switch instead of if statements
  */
 
 
 namespace Graphics
 {
-    class RenderObject2D<Vertex> : Node2D where Vertex : unmanaged
+    abstract class RenderObject2D<Vertex> : Node2D where Vertex : unmanaged
     {
         private readonly int VertexArrayHandle;
         private readonly int VertexBufferHandle;
-        private readonly int TextureHandle; 
+        private readonly int TextureHandle;
 
-        private readonly int VertexCount; // number of vertices
+        private readonly int VertexCount; // number of vertices, used in render
         private readonly int VertexSize; // size of vertex in bytes
         private int VertexLength; // number of data points in vertex
 
@@ -80,34 +81,30 @@ namespace Graphics
 
         public PolygonMode PolygonMode = PolygonMode.Fill;
         public MaterialFace MaterialFace = MaterialFace.Front;
-        
-        public bool FixToScreenSpace = false;
 
-
-        
-
-        public RenderObject2D(float Rotation, Vector2 Scale, Vector2 Position, Vertex[] Vertices, string Texture, string VertexShader, string FragmentShader) : base(Rotation, Scale, Position)
+        private int z_index = 1;
+        public Action<int> Set_Z_Index;
+        public int Z_index
         {
-            this.VertexCount = Vertices.Length;
-            ShaderProgram = new ShaderProgram(VertexShader, FragmentShader);
-            
-            Init_BufferArray(out VertexArrayHandle, out VertexBufferHandle, out VertexSize, Vertices);
-            TextureHandle = Init_Textures(Texture);
-
-            ShaderProgram.AddParameter(new Mat3Uniform(ShaderTarget.Vertex, "transform", this.GetTransform, this.SetTransform));
-            ShaderProgram.AddParameter(new TextureUniform(ShaderTarget.Fragment, "Texture", TextureHandle));
-
+            get => z_index; 
+            set => Set_Z_Index(value);
         }
-        public RenderObject2D(float Rotation, float ScaleX, float ScaleY, float PositionX, float PositionY, Vertex[] Vertices, string Texture, string VertexShader, string FragmentShader) : base(Rotation, new Vector2(ScaleX, ScaleY), new Vector2(PositionX, PositionY))
+
+        public RenderObject2D(float Rotation, Vector2 Scale, Vector2 Position, Vertex[] Vertices, DeepCopy<Matrix3> CameraCopy, DeepCopy<float> TimeCopy, string Texture, string VertexShader, string FragmentShader) : base(Rotation, Scale, Position)
         {
-            this.VertexCount = Vertices.Length;
+            Set_Z_Index = value => { z_index = value; };
+
             ShaderProgram = new ShaderProgram(VertexShader, FragmentShader);
             Init_BufferArray(out VertexArrayHandle, out VertexBufferHandle, out VertexSize, Vertices);
-
-            TextureHandle = Init_Textures(Texture);
-            //ProgramHandle = Init_Program(VertexShader, FragmentShader);
+            this.VertexCount = Vertices.Length;
             
+            TextureHandle = Init_Textures(Texture);
 
+            ShaderProgram.AddParameter(new Mat3Uniform(ShaderTarget.Vertex, "transform", TransformCopy));
+            ShaderProgram.AddParameter(new Mat3Uniform(ShaderTarget.Vertex, "camera", CameraCopy));
+            ShaderProgram.AddParameter(new TextureUniform(ShaderTarget.Fragment, "Texture", TextureHandle));
+            ShaderProgram.AddParameter(new FloatUniform(ShaderTarget.Both, "Time", TimeCopy));
+            ShaderProgram.CompileProgram();
         }
 
         /// <summary>
@@ -121,6 +118,7 @@ namespace Graphics
         {
             GL.VertexArrayAttribBinding(ArrayHandle, Location, 0);
             GL.EnableVertexArrayAttrib(ArrayHandle, Location);
+            
             // Handle, index when delivered to shader, number of elements, contains floats, already normalized so false, relative offset from 0 in bytes = 0 
             GL.VertexArrayAttribFormat(ArrayHandle, Location, Size, VertexAttribType.Float, false, Offset);
             Offset += Size * 4; // number of elements * float size
@@ -157,9 +155,6 @@ namespace Graphics
 
 
             // iterates through struct members
-
-
-            // can do with switch -> looks nicer
             FieldInfo[] FieldInfoArray = typeof(Vertex).GetFields();
             VertexLength = FieldInfoArray.Length;
 
@@ -242,29 +237,12 @@ namespace Graphics
         /// <summary>
         /// Show this object on the screen.
         /// </summary>
-        /// <param name="Camera">The Camera transform matrix.</param>
-        /// <param name="Time"></param>
-        public void Render(Matrix3 Camera, float Time)
+        public void Render()
         {
             GL.PolygonMode(MaterialFace, PolygonMode);
             // tell openGL to use this objects program
             ShaderProgram.UseProgram();
             
-            //GL.UseProgram(ProgramHandle);
-
-            // pass in uniforms
-            
-            // matrix transforms
-            //GL.UniformMatrix3(VertexLength, true, ref Transform_Matrix); // location 3
-
-            //GL.UniformMatrix3(VertexLength + 1, true, ref Camera); // location 4
-
-            // shader variables
-            //GL.Uniform1(VertexLength + 2, Time); // location 5
-            //GL.Uniform1(VertexLength + 3, 60f); // location 6
-
-            //GL.BindTextures(0, 1, new int[1] { TextureHandle });
-
             GL.BindVertexArray(VertexArrayHandle);
             GL.DrawArrays(PrimitiveType.Triangles, 0, VertexCount);
         }
@@ -273,8 +251,7 @@ namespace Graphics
         /// Called on each frame update.
         /// </summary>
         /// <param name="delta">Time since process was last called.</param>
-        public virtual void Process(float delta) { }
-
+        public abstract void Process(float delta);
 
 
         public virtual void OnMouseDown(MouseButtonEventArgs e) { }

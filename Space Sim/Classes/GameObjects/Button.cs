@@ -8,6 +8,7 @@ using OpenTK.Graphics.OpenGL4;
 using Graphics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
+using Shaders;
 
 namespace GameObjects
 {
@@ -19,18 +20,23 @@ namespace GameObjects
      */
 
 
-    /*
+   
     class Button : RenderObject2D<Vertex2D>
     {
-        List<Vector2> HitBoxMesh;
-        private delegate void ButtonPress(object sender);
-        event ButtonPress ButtonPressEvent;
+        public delegate void ButtonPress(object sender);
+        public ButtonPress ButtonPressed;
 
-        public Button(Vector2 Scale, Vector2 Position) : base(0, Scale, Position, Window.SquareMesh, "Button", "Button", "Default") 
+        public Button(Vector2 Scale, Vector2 Position, DeepCopy<Matrix3> CameraDeepCopy, DeepCopy<float> TimeCopy) : base(0, Scale, Position, Window.SquareMesh, CameraDeepCopy, TimeCopy, "Button", "Button", "Default") 
         {
-            FixToScreenSpace = true;
+            
         } 
-        public override void OnMouseDown(MouseButtonEventArgs e) { }
+        
+        public override void Process(float delta) { }
+        
+        public override void OnMouseDown(MouseButtonEventArgs e) 
+        {
+            // NEEDS MOUSE POSITION
+        }
         public override void OnMouseUp(MouseButtonEventArgs e) { }
         public override void OnMouseMove(MouseMoveEventArgs e) { }
 
@@ -43,18 +49,21 @@ namespace GameObjects
             bool AllPositive = true, AllNegative = true;
             for (int i = 0; i < Polygon.Count; i++)
             {
-                Vector2 T1, T2;
+                Vector2 V1, V2;
                 float D;
-                T1 = Polygon[i % Polygon.Count];
-                T2 = Polygon[(i + 1) % Polygon.Count];
-                D = cross(P, T1) + cross(T1, T2) + cross(T2, P);
+                V1 = Polygon[i % Polygon.Count]; // first vertex
+                V2 = Polygon[(i + 1) % Polygon.Count]; // second vertex
+                // V3 = point
+                D = cross(P, V1) + cross(V1, V2) + cross(V2, P); // the determinate of the triangle V1, V2, V3
                 
                 if (D > 0) AllNegative = false;
                 if (D < 0) AllPositive = false;
             }
+            // depending on the winding of the triangle clockwise or anti clockwise
+            // point is inside the triangle if all determinates are positive or all are negative
             if (AllPositive || AllNegative) return true;
             else return false;
         }
     }
-    */
+    
 }

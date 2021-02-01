@@ -12,14 +12,12 @@ namespace Graphics
      * This means that the shaders are written for a particular type vertex.
      */
 
-
-
     public struct Vertex2D
     {
-        public Vector2 VertUV; // 2 floats = 8 bytes
+        
         public Vector2 TextureUV; // 2 floats = 8 bytes
         public Color4 VertColour; // 4 floats = 16 bytes
-
+        public Vector2 VertUV; // 2 floats = 8 bytes
         public Vertex2D(Vector2 Position, Vector2 TextureUV, Color4 Colour)
         {
             this.VertUV = Position;
@@ -35,6 +33,7 @@ namespace Graphics
         }
     }
     
+    // no dont. just dont. no 3D. 
     public struct Vertex3D
     {
         private Vector3 Position; // 3 floats = 12 bytes

@@ -19,20 +19,19 @@ namespace GameObjects
      * set up Z index
      * Should be custom list thing for render object update on change of Z index
      * Add events to objects
-     * ScreenSpace Y value broken???  FIXED
      */
-
     public sealed class Window : GameWindow
     {
         // Window Variable
-        public OpenTK.Mathematics.Color4 RefreshCol = new OpenTK.Mathematics.Color4(0.05f, 0.1f, 0.2f, 1.0f);
-        List<RenderObject2D<Vertex2D>> RenderObjects2D;
+        public Color4 RefreshCol = new Color4(0.05f, 0.1f, 0.2f, 1.0f);
+        RenderObjectList<Vertex2D> RenderList = new RenderObjectList<Vertex2D>();
         Camera2D Camera;
         
         // Shader Variables
         private float Time;
+        DeepCopy<float> TimeCopy;
 
-
+        // for convenience - doesnt rly belong here
         public static readonly Vertex2D[] SquareMesh = new Vertex2D[6] {
             new Vertex2D(-1, 1, 0, 0, 1, 1, 1, 1),
             new Vertex2D(-1,-1, 0, 1, 1, 1, 1, 1),
@@ -44,18 +43,16 @@ namespace GameObjects
             };
 
         public Window(GameWindowSettings GWS, NativeWindowSettings NWS) : base(GWS, NWS)
-        {
-            RenderObjects2D = new List<RenderObject2D<Vertex2D>>();
-            
+        {         
             Camera = new Camera2D(NWS.Size, 1, 300, 0.5f);
 
             MouseDown += Camera.OnMouseDown;
             MouseUp += Camera.OnMouseUp;
 
-            
-
             GL.ClearColor(RefreshCol);
             this.VSync = VSyncMode.On;
+
+            TimeCopy = new DeepCopy<float>(() => Time, value => { Time = value; });
         }
 
         protected override void OnResize(ResizeEventArgs e)
@@ -66,24 +63,26 @@ namespace GameObjects
         }
         protected override void OnLoad()
         {
-
-            // remove later
-            RenderObjects2D.Add(new RenderObject2D<Vertex2D>(0.0f, new Vector2(48f, 48f), new Vector2(0, 0), SquareMesh, "4 Mars TS", "Default", "Default"));
+            Planet P1 = new Planet(new Vector2(48f, 48f), new Vector2(48, 0), Camera.TransformCopy, TimeCopy, "4 Mars TS", "Default", "Default");
+            Planet P2 = new Planet(new Vector2(48f, 48f), new Vector2(0, 0), Camera.TransformCopy, TimeCopy, "2 Venus TS", "Default", "Default");
+            Planet P3 = new Planet(new Vector2(48f, 48f), new Vector2(-48, 0), Camera.TransformCopy, TimeCopy, "3 Earth TS", "Default", "Default");
             
-            RenderObjects2D[0].ShaderProgram.AddParameter(new Mat3Uniform(ShaderTarget.Vertex, "camera", Camera.GetTransform, Camera.SetTransform));
-            RenderObjects2D[0].ShaderProgram.AddParameter(new FloatUniform(ShaderTarget.Both, "Time", () => Time, value => { Time = value; }));
-            RenderObjects2D[0].ShaderProgram.CompileProgram();
+            
+            // remove later
+            RenderList.Add(P1);
+            RenderList.Add(P2);
+            RenderList.Add(P3);
+
+            
+            //RenderObject2D<Vertex2D> temp = RenderList[0];
+            //RenderList[0] = RenderList[1];
+            //RenderList[1] = temp;
+
+
 
             // allows blending ie semi transparent stuff
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-        }
-
-        private void Add(RenderObject2D<Vertex2D> RenderObject)
-        {
-            RenderObjects2D.Add(RenderObject);
-            MouseDown += RenderObject.OnMouseDown;
-            MouseUp += RenderObject.OnMouseUp;
         }
 
         // may want to inherit these in a child class instead
@@ -113,37 +112,30 @@ namespace GameObjects
         {
             // testing
             Time += (float)e.Time;
-            //Vsync: {VSync} FPS: {1f / e.Time:0} Time: {Time}
             Title =
                 "WorldPos: " +
-                $"{MathF.Round(ScreenToWorld(MousePosition).X, 2)}," +
-                $"{MathF.Round(ScreenToWorld(MousePosition).Y, 2)} " +
+                $"{MathF.Round(Camera.ScreenToWorld(MousePosition).X, 2)}," +
+                $"{MathF.Round(Camera.ScreenToWorld(MousePosition).Y, 2)} " +
 
                 $"CameraPos: " +
                 $"{MathF.Round(Camera.Position.X, 2)}," +
                 $"{MathF.Round(Camera.Position.Y, 2)} " +
 
-                $"CameraWorldPos: {Camera.WorldPosition}";// +
-                //$"{MathF.Round(Camera.WorldPosition.X, 2)}," +
-                //$"{MathF.Round(Camera.WorldPosition.Y, 2)} ";
+                $"CameraWorldPos: {Camera.WorldPosition}" +
 
-            
-            Camera.Process((float)e.Time);
+                $"Vsync: { VSync} FPS: { 1f / e.Time : 0}"; // : 0 truncates to 0 decimal places
             
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
+            Camera.Process((float)e.Time);
+
+            foreach (var R in RenderList) R.Process((float)e.Time);
+
+            foreach (var R in RenderList) R.Render();
             
-            foreach (var R in RenderObjects2D) R.Process((float)e.Time);
-            foreach (var R in RenderObjects2D) R.Render(Camera.Transform_Matrix, Time);
-            
-            SwapBuffers();
+            SwapBuffers(); // swap out screen buffer with new one
         }
 
-        /// <summary>
-        /// Converts Screen space to world space.
-        /// </summary>
-        /// <param name="Pos">the pixel position on the screen.</param>
-        /// <returns>The position in the world space.</returns>
-        public Vector2 ScreenToWorld(Vector2 Pos) => Camera.WorldPosition + new Vector2(((2 * Pos.X / Size.X) - 1) / 2 / Camera.Scale.X, ((2 * Pos.Y / Size.Y) - 1) / 2 / Camera.Scale.Y);
     }
 }
 

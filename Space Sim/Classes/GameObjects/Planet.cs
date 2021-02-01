@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Text;
 using Graphics;
 using OpenTK.Mathematics;
+using Shaders;
 namespace GameObjects
 {
-    /*
+    
     class Planet : RenderObject2D<Vertex2D>
     {
-        public Planet(Vector2 Scale, float Eccentricity, Vector2 StartPosition, string Texture, string VertexShader, string FragmentShader) : base(0, Scale, StartPosition, Window.SquareMesh, Texture, VertexShader, FragmentShader) 
+        public Planet(Vector2 Scale, Vector2 StartPosition, DeepCopy<Matrix3> CameraCopy, DeepCopy<float> TimeCopy, string Texture, string VertexShader, string FragmentShader)
+            : base(0, Scale, StartPosition, Window.SquareMesh, CameraCopy, TimeCopy, Texture, VertexShader, FragmentShader) 
         { 
             
         }
@@ -17,5 +19,5 @@ namespace GameObjects
             
         }
     }
-    */
+    
 }

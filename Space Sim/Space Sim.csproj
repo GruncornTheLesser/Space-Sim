@@ -26,6 +26,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Shaders\GaussianGlowFrag.shader">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Shaders\DefaultFrag.shader">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

@@ -9,19 +9,9 @@ using System.Collections;
 
 namespace Shaders
 {
-    /* Unfinished
-     * very much a thing to do.
-     * 
-     * The Idea is all the shader parameters are stored in a dictionary
-     * then the "parameters" class will generate the initial code for 
-     * the vertex and fragment shader.
-     * 
-     * idk how i want to deal with textures
-     */
-
-
-
-
+    // THING TO DO:
+    // Add ability to change value
+    // Add default value so dont have to pass it in the constructor
 
 
     class ShaderProgram

@@ -11,9 +11,6 @@ namespace Space_Sim
     {
         static void Main()
         {
-
-
-
             var GWS = new GameWindowSettings();
             var NWS = new NativeWindowSettings();
             NWS.Size = new Vector2i(800, 800);

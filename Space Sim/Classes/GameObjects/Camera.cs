@@ -8,9 +8,8 @@ namespace GameObjects
 {
 
     /* THING TO DO:
-     * have not implemented the movement while zooming. 
+     * have not implemented the movement while zooming. ie zoom to location
      * 
-     * I think basescale has introduced an extra factor of 2 from somewhere. -> fix that
      */
 
     sealed class Camera2D : Node2D
@@ -163,5 +162,13 @@ namespace GameObjects
         {
             Zoom *= MathF.Pow(MathF.Pow(zoomrate, ZoomIndex), delta); // decrease by zoomrate in zoomtime
         }
+
+        /// <summary>
+        /// Converts Screen space to world space.
+        /// </summary>
+        /// <param name="Pos">the pixel position on the screen.</param>
+        /// <returns>The position in the world space.</returns>
+        public Vector2 ScreenToWorld(Vector2 Pos) => WorldPosition + new Vector2(((2 * Pos.X / windowsize.X) - 1) / 2 / Scale.X, ((2 * Pos.Y / windowsize.Y) - 1) / 2 / Scale.Y);
+
     }
 }

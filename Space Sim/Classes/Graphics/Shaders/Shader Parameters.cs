@@ -4,25 +4,8 @@ using System;
 
 namespace Shaders
 {
-    /* There is probably a better way to do this
-     * I tried for a while to get it into the same class
-     * but although this is huge and gross it does what its supposed to relatively simply
-     * 
-     * The problems i was dealing with types at run time in c# is painful
-     * it also needed to be iterable hence the abstract IUniform class
-     * 
-     * This heavily uses pointers. the idea was you pass in the pointer from where ever and then updating uniforms becomes really easy
-     * 
-     * pointer are making things difficult. C# moves memory around alot so requires you to fix all the variables that need pointers. this makes sense. its just frustrating.
-     * 
-     * an alternative idea is using delegates???
-     * 
-     * using delegates is much better :)
-     * 
-     * 
-     * 
-     * The reason I have used a bunch of inheritance rather than a dictionary of functions(or something else) is it needs to know the type to use in the openGL functions.
-     
+    /* THING TO DO:
+     * could pass in deep copy instead of delegates
      */
 
     public enum ShaderTarget
@@ -31,13 +14,15 @@ namespace Shaders
         Vertex,
         Both
     }
+
+
     /// <summary>
-    /// A deep copy updates the original value and vice versa. This is opposed to a shallow copy that doesnt update the original.
+    /// A deep copy updates the original value when changed and vice versa. This is opposed to a shallow copy that doesnt update the original.
     /// </summary>
     /// <typeparam name="T">The type of the value being copied.</typeparam>
     class DeepCopy<T>
     {
-        // 2 delegate values
+        // 2 delegates
         private readonly Func<T> GET;
         private readonly Action<T> SET;
 
@@ -48,13 +33,14 @@ namespace Shaders
             set { SET(value); }
         }
 
-        // pass in a get and set value
+        // pass in a get and set delegates
         public DeepCopy(Func<T> getter, Action<T> setter)
         {
             GET = getter;
             SET = setter;
         }
     }
+
 
     /// <summary>
     /// Abstract iterable Uniform or Vertex parameter.
@@ -119,6 +105,12 @@ namespace Shaders
             }
         }
     }
+    
+    
+    /// <summary>
+    /// Vertex Parameter
+    /// </summary>
+    /// <typeparam name="T">The type of parameter being saved</typeparam>
     class VertexParameter<T> : Iparameter
     {
         public VertexParameter(ShaderTarget ShaderTarget, string Name)
@@ -146,15 +138,21 @@ namespace Shaders
         public override string GenFragDef(ref int Location) => "";
         public override void UpdateUniform() { }
     }
+    
+
+    /// <summary>
+    /// Uniform Parameter. uses a deepcopy.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     class UniformParameter<T> : Iparameter
     {
         protected DeepCopy<T> parameter;
 
-        public UniformParameter(ShaderTarget ShaderTarget, string Name, Func<T> Get, Action<T> Set)
+        public UniformParameter(ShaderTarget ShaderTarget, string Name, DeepCopy<T> Parameter)
         {
             shadertarget = ShaderTarget;
             name = Name;
-            parameter = new DeepCopy<T>(Get, Set);
+            parameter = Parameter;
         }
 
         /// <summary>
@@ -165,6 +163,7 @@ namespace Shaders
         public override string GenVertDef(ref int Location)
         {
             if (shadertarget == ShaderTarget.Fragment) return "";
+            // else if vertex or both
             location = Location;
             return $"layout(location = {Location++}) uniform {TypeToGLSL<T>()} {name};{Environment.NewLine}";
         }
@@ -176,8 +175,10 @@ namespace Shaders
         public override string GenFragDef(ref int Location)
         {
             if (shadertarget == ShaderTarget.Vertex) return "";
+            // both needs to read the location made in the vertex definition
             if (shadertarget == ShaderTarget.Both) return $"layout(location = {this.location}) uniform {TypeToGLSL<T>()} {name};{Environment.NewLine}";
             
+            // else if only fragment 
             this.location = Location;
             return $"layout(location = {Location++}) uniform {TypeToGLSL<T>()} {name};{Environment.NewLine}";
         }
@@ -192,35 +193,44 @@ namespace Shaders
 
     }
 
+    /* 
+     * Very little variation in these classes here.
+     * All inherit from UniformParameter
+     * the only thing that is changing is the update uniform as it needs to be a different openGL function for each type
+     * this means the type has to be defined instead of just T so i made seperate objects for each type
+     * 
+     * The only exception is the texture which also uses a different GeFragDef() and GenVertDef()
+     * this is because its saved as an int OpenGL Handle so would get confused with passing in an int.
+     */
     class FloatUniform : UniformParameter<float>
     {
-        public FloatUniform(ShaderTarget ShaderTarget, string Name, Func<float> Get, Action<float> Set) : base(ShaderTarget, Name, Get, Set) { }
+        public FloatUniform(ShaderTarget ShaderTarget, string Name, DeepCopy<float> Parameter) : base(ShaderTarget, Name, Parameter) { }
         public override void UpdateUniform() => GL.Uniform1(location, parameter.Value);
     }
     class IntUniform : UniformParameter<int> 
     {
-        public IntUniform(ShaderTarget ShaderTarget, string Name, Func<int> Get, Action<int> Set) : base(ShaderTarget, Name, Get, Set) { }
+        public IntUniform(ShaderTarget ShaderTarget, string Name, DeepCopy<int> Parameter) : base(ShaderTarget, Name, Parameter) { }
         public override void UpdateUniform() => GL.Uniform1(location, parameter.Value);
     }
     class Vec2Uniform : UniformParameter<Vector2> 
     {
-        public Vec2Uniform(ShaderTarget ShaderTarget, string Name, Func<Vector2> Get, Action<Vector2> Set) : base(ShaderTarget, Name, Get, Set) { }
+        public Vec2Uniform(ShaderTarget ShaderTarget, string Name, DeepCopy<Vector2> Parameter) : base(ShaderTarget, Name, Parameter) { }
         public override void UpdateUniform() => GL.Uniform2(location, parameter.Value);
 
     }
     class Vec3Uniform : UniformParameter<Vector3> 
     {
-        public Vec3Uniform(ShaderTarget ShaderTarget, string Name, Func<Vector3> Get, Action<Vector3> Set) : base(ShaderTarget, Name, Get, Set) { }
+        public Vec3Uniform(ShaderTarget ShaderTarget, string Name, DeepCopy<Vector3> Parameter) : base(ShaderTarget, Name, Parameter) { }
         public override void UpdateUniform() => GL.Uniform3(location, parameter.Value);
     }
     class Vec4Uniform : UniformParameter<Vector4> 
     {
-        public Vec4Uniform(ShaderTarget ShaderTarget, string Name, Func<Vector4> Get, Action<Vector4> Set) : base(ShaderTarget, Name, Get, Set) { }
+        public Vec4Uniform(ShaderTarget ShaderTarget, string Name, DeepCopy<Vector4> Parameter) : base(ShaderTarget, Name, Parameter) { }
         public override void UpdateUniform() => GL.Uniform4(location, parameter.Value);
     }
     class Mat2Uniform : UniformParameter<Matrix2> 
     {
-        public Mat2Uniform(ShaderTarget ShaderTarget, string Name, Func<Matrix2> Get, Action<Matrix2> Set) : base(ShaderTarget, Name, Get, Set) { }
+        public Mat2Uniform(ShaderTarget ShaderTarget, string Name, DeepCopy<Matrix2> Parameter) : base(ShaderTarget, Name, Parameter) { }
         public override void UpdateUniform()
         {
             Matrix2 M = parameter.Value;
@@ -230,7 +240,7 @@ namespace Shaders
     }
     class Mat3Uniform : UniformParameter<Matrix3> 
     {
-        public Mat3Uniform(ShaderTarget ShaderTarget, string Name, Func<Matrix3> Get, Action<Matrix3> Set) : base(ShaderTarget, Name, Get, Set) { }
+        public Mat3Uniform(ShaderTarget ShaderTarget, string Name, DeepCopy<Matrix3> Parameter) : base(ShaderTarget, Name, Parameter) { }
         public override void UpdateUniform()
         {
             Matrix3 M = parameter.Value;
@@ -240,7 +250,7 @@ namespace Shaders
     }
     class Mat4Uniform : UniformParameter<Matrix4> 
     {
-        public Mat4Uniform(ShaderTarget ShaderTarget, string Name, Func<Matrix4> Get, Action<Matrix4> Set) : base(ShaderTarget, Name, Get, Set) { }
+        public Mat4Uniform(ShaderTarget ShaderTarget, string Name, DeepCopy<Matrix4> Parameter) : base(ShaderTarget, Name, Parameter) { }
         public override void UpdateUniform()
         {
             Matrix4 M = parameter.Value;
@@ -250,7 +260,7 @@ namespace Shaders
     }
     class TextureUniform : UniformParameter<int> 
     {
-        public TextureUniform(ShaderTarget ShaderTarget, string Name, int TextureHandle) : base(ShaderTarget, Name, ()=> TextureHandle, value => { TextureHandle = value; }) { }
+        public TextureUniform(ShaderTarget ShaderTarget, string Name, int TextureHandle) : base(ShaderTarget, Name, new DeepCopy<int>(()=> TextureHandle, value => { TextureHandle = value; })) { }
         public override void UpdateUniform() => GL.BindTextures(0, 1, new int[1] { parameter.Value });
         public override string GenVertDef(ref int Location)
         {
