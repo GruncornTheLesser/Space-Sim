@@ -7,10 +7,17 @@ using System.Collections;
 
 namespace Graphics
 {
-    //sorts render objects by z index
+    /* THING TO DO:
+     * Create hash table to speed up sorting and use less memory
+     */
+
+    /// <summary>
+    /// Sorts Render Objects by Z index
+    /// </summary>
+    /// <typeparam name="Vertex"></typeparam>
     class RenderObjectList<Vertex> : ICollection<RenderObject2D<Vertex>> where Vertex : unmanaged
     {
-        private readonly List<RenderObject2D<Vertex>> _List = new List<RenderObject2D<Vertex>>();
+        private List<RenderObject2D<Vertex>> _List = new List<RenderObject2D<Vertex>>();
 
         public int Count => _List.Count;
         public bool IsReadOnly => false;
@@ -20,6 +27,7 @@ namespace Graphics
             get => _List[index];
             set => _List[index] = value; 
         }
+
 
         public void Add(RenderObject2D<Vertex> item)
         {
@@ -39,10 +47,25 @@ namespace Graphics
             }
             _List.Add(item);
         }
+
+        /// <summary>
+        /// When Z index is updated, one object will be out of place so this can loop through and reposition it.
+        /// </summary>
+        /// <param name="Z"></param>
         private void Update_Index(int Z)
         {
-
+            // loops forward
             for (int i = 1; i < Count; i++)
+            {
+                if (_List[i].Z_index < _List[i - 1].Z_index)
+                {
+                    RenderObject2D<Vertex> temp = _List[i - 1];
+                    _List[i - 1] = _List[i];
+                    _List[i] = temp;
+                }
+            }
+            // loops backwards
+            for (int i = Count - 1; i > 1; i--)
             {
                 if (_List[i].Z_index < _List[i - 1].Z_index)
                 {

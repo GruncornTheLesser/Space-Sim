@@ -6,13 +6,10 @@ using System.Text;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using System.Collections;
+using DeepCopy;
 
 namespace Shaders
 {
-    // THING TO DO:
-    // Add ability to change value
-    // Add default value so dont have to pass it in the constructor
-
 
     class ShaderProgram
     {
@@ -20,7 +17,13 @@ namespace Shaders
         private string vertpath;
         private string fragpath;
 
-        private List<Iparameter> Parameters;
+        private Dictionary<string, UniformParameter> UniformParameters = new Dictionary<string, UniformParameter>();
+        private List<IVertexParameter> VertexParameters = new List<IVertexParameter>();
+        public UniformParameter this[string Name]
+        {
+            get => UniformParameters[Name];
+        }
+
 
         public string VertexShaderPath
         {
@@ -54,23 +57,31 @@ namespace Shaders
 
         public ShaderProgram(string VertexPath, string FragmentPath)
         {
-            Parameters = new List<Iparameter>();
             vertpath = VertexPath;
             fragpath = FragmentPath;
         }
+
+        public void AddUniform(UniformParameter NewUniform)
+        {
+            if (UniformParameters.ContainsKey(NewUniform.name))
+            {
+                throw new Exception($"the name {NewUniform.name} is already taken on this shader program");
+            }
+
+            UniformParameters[NewUniform.name] = NewUniform;
+        }
+        public void AddVertexParameter(IVertexParameter NewVertexParameter)
+        {
+            VertexParameters.Add(NewVertexParameter);
+        }
+
         public void UseProgram()
         {
             GL.PolygonMode(MaterialFace, PolygonMode);
             GL.UseProgram(ProgramHandle);
-            foreach (Iparameter P in Parameters) P.UpdateUniform();
+            foreach (string name in UniformParameters.Keys) UniformParameters[name].UpdateUniform();
         }
-
-        public void AddParameter(Iparameter parameter)
-        {
-            Parameters.Add(parameter);
-        }
-
-
+      
         public void CompileProgram()
         {
             GL.DeleteProgram(ProgramHandle);
@@ -112,14 +123,20 @@ namespace Shaders
 
             // writes initial variable definition at start of script
             int location = 0;
+
+            // generate uniform definitions
             if (shadertype == ShaderType.VertexShader)
             {
-                foreach (Iparameter P in Parameters) code += P.GenVertDef(ref location);
+                // generate vertex defintions
+                foreach (IVertexParameter P in VertexParameters) code += P.VertDefinition(ref location);
+                foreach (string name in UniformParameters.Keys) code += UniformParameters[name].VertDefinition(ref location);
             }
             else
             {
-                foreach (Iparameter P in Parameters) code += P.GenFragDef(ref location);
+                foreach (string name in UniformParameters.Keys) code += UniformParameters[name].FragDefinition(ref location);
             }
+            
+            // read file and add text to code
             code += File.ReadAllText(path);
 
             // attaches shader and code

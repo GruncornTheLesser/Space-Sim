@@ -10,6 +10,7 @@ using OpenTK.Input;
 using OpenTK.Mathematics;
 using Graphics;
 using Shaders;
+using DeepCopy;
 
 namespace GameObjects
 {
@@ -67,19 +68,12 @@ namespace GameObjects
             Planet P2 = new Planet(new Vector2(48f, 48f), new Vector2(0, 0), Camera.TransformCopy, TimeCopy, "2 Venus TS", "Default", "Default");
             Planet P3 = new Planet(new Vector2(48f, 48f), new Vector2(-48, 0), Camera.TransformCopy, TimeCopy, "3 Earth TS", "Default", "Default");
             
-            
             // remove later
             RenderList.Add(P1);
             RenderList.Add(P2);
             RenderList.Add(P3);
 
             
-            //RenderObject2D<Vertex2D> temp = RenderList[0];
-            //RenderList[0] = RenderList[1];
-            //RenderList[1] = temp;
-
-
-
             // allows blending ie semi transparent stuff
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);

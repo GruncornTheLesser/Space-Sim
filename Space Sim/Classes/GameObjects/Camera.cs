@@ -8,7 +8,7 @@ namespace GameObjects
 {
 
     /* THING TO DO:
-     * have not implemented the movement while zooming. ie zoom to location
+     * have not implemented the movement while zooming. ie zoom to location - dont know if user wants this.
      * 
      */
 

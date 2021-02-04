@@ -4,7 +4,7 @@ using System.Text;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Desktop;
 using Shaders;
-
+using DeepCopy;
 namespace Graphics
 {
     class Node2D
@@ -70,7 +70,7 @@ namespace Graphics
             this.scale = scale;
             this.position = position;
             Transform_Matrix = new Matrix3(
-                    scale.X * MathF.Cos(rotation), -scale.Y * MathF.Sin(rotation), position.X,
+                    scale.X * MathF.Cos(rotation),-scale.Y * MathF.Sin(rotation), position.X,
                     scale.X * MathF.Sin(rotation), scale.Y * MathF.Cos(rotation), position.Y,
                     0, 0, 1
                     );

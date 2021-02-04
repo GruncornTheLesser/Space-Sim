@@ -9,6 +9,7 @@ using Graphics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using Shaders;
+using DeepCopy;
 
 namespace GameObjects
 {

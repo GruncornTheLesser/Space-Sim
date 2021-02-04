@@ -8,6 +8,7 @@ using OpenTK.Graphics.OpenGL4;
 using System.Drawing;
 using OpenTK.Windowing.Common;
 using Shaders;
+using DeepCopy;
 /* OpenGL Hardware Pipeline
  * ====================CPU====================
  * yo OpenGL, go draw this cool stuff.
@@ -90,9 +91,11 @@ namespace Graphics
             set => Set_Z_Index(value);
         }
 
+
+
         public RenderObject2D(float Rotation, Vector2 Scale, Vector2 Position, Vertex[] Vertices, DeepCopy<Matrix3> CameraCopy, DeepCopy<float> TimeCopy, string Texture, string VertexShader, string FragmentShader) : base(Rotation, Scale, Position)
         {
-            Set_Z_Index = value => { z_index = value; };
+            Set_Z_Index = value => z_index = value;
 
             ShaderProgram = new ShaderProgram(VertexShader, FragmentShader);
             Init_BufferArray(out VertexArrayHandle, out VertexBufferHandle, out VertexSize, Vertices);
@@ -100,11 +103,14 @@ namespace Graphics
             
             TextureHandle = Init_Textures(Texture);
 
-            ShaderProgram.AddParameter(new Mat3Uniform(ShaderTarget.Vertex, "transform", TransformCopy));
-            ShaderProgram.AddParameter(new Mat3Uniform(ShaderTarget.Vertex, "camera", CameraCopy));
-            ShaderProgram.AddParameter(new TextureUniform(ShaderTarget.Fragment, "Texture", TextureHandle));
-            ShaderProgram.AddParameter(new FloatUniform(ShaderTarget.Both, "Time", TimeCopy));
+            ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "transform"));
+            ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "camera", CameraCopy));
+            ShaderProgram.AddUniform(new FloatUniform(ShaderTarget.Both, "Time", TimeCopy));
+            ShaderProgram.AddUniform(new TextureUniform(ShaderTarget.Fragment, "Texture", TextureHandle));
+
             ShaderProgram.CompileProgram();
+
+            ShaderProgram["transform"].SetUniform((IDeepCopy)TransformCopy);
         }
 
         /// <summary>
@@ -125,7 +131,7 @@ namespace Graphics
 
             // adds parameter in shader program.
             // this will add it to the scripts.
-            ShaderProgram.AddParameter(new VertexParameter<T>(ShaderTarget.Vertex, Name));
+            ShaderProgram.AddVertexParameter(new VertexParameter<T>(ShaderTarget.Vertex, Name));
         }
         
         /// <summary>
