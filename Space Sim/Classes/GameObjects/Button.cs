@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
-using System.Reflection;
 using OpenTK.Mathematics;
 using OpenTK.Graphics.OpenGL4;
 using Graphics;
@@ -10,41 +9,44 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using Shaders;
 using DeepCopy;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace GameObjects
 {
     /* THINGS TO DO:
-     * button press event
-     * button hover texture
-     * slider button
-     * toggle button
+     * Needs access to world coordinates maybe use static class?
      */
+    public delegate void ButtonPress(object sender, Vector2 MousePosition, MouseButtonEventArgs e);
 
 
-   
     class Button : RenderObject2D<Vertex2D>
     {
-        public delegate void ButtonPress(object sender);
-        public ButtonPress ButtonPressed;
+        private bool Pressed = false;
+        public bool IsPressed
+        {
+            set => SetPressed(value);
+            get => Pressed;
+        }
+        Action<bool> SetPressed => value => Pressed = value;
 
-        public Button(Vector2 Scale, Vector2 Position, DeepCopy<Matrix3> CameraDeepCopy, DeepCopy<float> TimeCopy) : base(0, Scale, Position, Window.SquareMesh, CameraDeepCopy, TimeCopy, "Button", "Button", "Default") 
+        public Button(Vector2 Scale, Vector2 Position, DeepCopy<Matrix3> CameraDeepCopy, DeepCopy<float> TimeCopy, ButtonPress ButtonPressedAction) : base(0, Scale, Position, Window.SquareMesh, CameraDeepCopy, TimeCopy, "Button", "Button", "Default") 
         {
             
         } 
         
         public override void Process(float delta) { }
-        
-        public override void OnMouseDown(MouseButtonEventArgs e) 
+
+        public override void OnMouseDown(MouseState MouseState) 
         {
-            // NEEDS MOUSE POSITION
         }
-        public override void OnMouseUp(MouseButtonEventArgs e) { }
-        public override void OnMouseMove(MouseMoveEventArgs e) { }
+        public override void OnMouseUp(MouseState MouseState) { }
+        public override void OnMouseMove(MouseState MouseState) { }
+        public override void OnMouseWheel(MouseState MouseState) { }
 
 
         // could seperate off into a static geometry class
         static private float cross(Vector2 V1, Vector2 V2) => V1.X * V2.Y - V2.X* V1.Y;
-        static public bool PointInPolygon(List<Vector2> Polygon, Vector2 P) 
+        static private bool PointInPolygon(List<Vector2> Polygon, Vector2 P) 
         {
             // assumes concave shape
             bool AllPositive = true, AllNegative = true;

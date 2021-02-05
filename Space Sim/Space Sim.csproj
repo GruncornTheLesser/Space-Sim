@@ -19,6 +19,8 @@
   <ItemGroup>
     <Compile Remove="Classes\_RemovedMaths.cs" />
     <Compile Remove="Classes\_RemovedShader.cs" />
+    <Compile Remove="Classes\_Removed\Node3D.cs" />
+    <Compile Remove="Classes\_Removed\_RemovedMaths.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -68,8 +70,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="Classes\_Removed\_RemovedMaths.cs" />
     <None Include="Classes\Graphics\Shaders\Shader Program.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Classes\_Removed\" />
   </ItemGroup>
 
 </Project>

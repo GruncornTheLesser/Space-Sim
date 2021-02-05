@@ -9,34 +9,35 @@ using System.Drawing;
 using OpenTK.Windowing.Common;
 using Shaders;
 using DeepCopy;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 /* OpenGL Hardware Pipeline
- * ====================CPU====================
- * yo OpenGL, go draw this cool stuff.
- *                      V
- * ====================GPU====================
- * Vertex Shader - code to animate and position each vertex
- *                      V
- [X]Tesselation Control (optional) - specify how many vertices to generate
- *                      V
- [X]Tesselation (optional) - generate vertices
- *                      V
- [X]Tesselation Evaluation Shader (optional) position new vertices
- *                      V
- [X]Geometry Shader (optional) - generate or delete geometry
- *                      V
- * Clipping - remove stuff thats out of frame
- *                      V
- * Rasterization - primitive triangles are turned into 2d bitmap of pixels
- *      V
- * Fragment Shader - code to colour each pixel
- *                      V
- [~] Blending - overlapping pixels are blended into 1
- *                      V
- [~] Frame Buffer - loads 2d image into frame buffer
- * ==================RETURN===================
- [X] means not doing it
- [~] means its done by openGl 
- */
+* ====================CPU====================
+* yo OpenGL, go draw this cool stuff.
+*                      V
+* ====================GPU====================
+* Vertex Shader - code to animate and position each vertex
+*                      V
+[X]Tesselation Control (optional) - specify how many vertices to generate
+*                      V
+[X]Tesselation (optional) - generate vertices
+*                      V
+[X]Tesselation Evaluation Shader (optional) position new vertices
+*                      V
+[X]Geometry Shader (optional) - generate or delete geometry
+*                      V
+* Clipping - remove stuff thats out of frame
+*                      V
+* Rasterization - primitive triangles are turned into 2d bitmap of pixels
+*      V
+* Fragment Shader - code to colour each pixel
+*                      V
+[~] Blending - overlapping pixels are blended into 1
+*                      V
+[~] Frame Buffer - loads 2d image into frame buffer
+* ==================RETURN===================
+[X] means not doing it
+[~] means its done by openGl 
+*/
 
 /* A Handle is a pointer for openGL. i kept the name because it made it simpler for me to understand.
  * 
@@ -50,7 +51,7 @@ using DeepCopy;
  * make sure the casting is done right
  * calling the memory allocation function
  * making sure the memory is released when the work is done
- */ 
+ */
 
 /* fixed:
  * a fixed statement can be applied to a pointer which means the CLR garbage collector ignores the pointer
@@ -59,7 +60,6 @@ using DeepCopy;
 
 
 /* THING TO DO:
- * Z index to decide which goes in front. - Mostly a change to window. - useful especially for buttons which must be in front
  * Write better shaders for planets - could do some 3d mapping
  * FixToScreenSpace 
  * 
@@ -68,6 +68,10 @@ using DeepCopy;
 
 namespace Graphics
 {
+    /// <summary>
+    /// An Object that renders onto the screen.
+    /// </summary>
+    /// <typeparam name="Vertex"></typeparam>
     abstract class RenderObject2D<Vertex> : Node2D where Vertex : unmanaged
     {
         private readonly int VertexArrayHandle;
@@ -78,39 +82,38 @@ namespace Graphics
         private readonly int VertexSize; // size of vertex in bytes
         private int VertexLength; // number of data points in vertex
 
-        public ShaderProgram ShaderProgram;
-
-        public PolygonMode PolygonMode = PolygonMode.Fill;
-        public MaterialFace MaterialFace = MaterialFace.Front;
-
-        private int z_index = 1;
-        public Action<int> Set_Z_Index;
+        // z index fields 
+        private static int z_index = 1;
         public int Z_index
         {
             get => z_index; 
             set => Set_Z_Index(value);
         }
+        // used in RenderObjects List to update list when z index changes
+        public Action<int> Set_Z_Index = value => z_index = value;
 
-
+        public ShaderProgram ShaderProgram;
 
         public RenderObject2D(float Rotation, Vector2 Scale, Vector2 Position, Vertex[] Vertices, DeepCopy<Matrix3> CameraCopy, DeepCopy<float> TimeCopy, string Texture, string VertexShader, string FragmentShader) : base(Rotation, Scale, Position)
         {
-            Set_Z_Index = value => z_index = value;
-
+            // initiate the shader program with the file paths to the shaders
             ShaderProgram = new ShaderProgram(VertexShader, FragmentShader);
+            
+            // Buffer array is the buffer that stores the vertices. this requires shaderprogram to be initiated because it adds in the shader parameters of the vertices
             Init_BufferArray(out VertexArrayHandle, out VertexBufferHandle, out VertexSize, Vertices);
             this.VertexCount = Vertices.Length;
             
+            // initiate the texture of this object. every object needs a texture the way it works right now. 
             TextureHandle = Init_Textures(Texture);
 
-            ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "transform"));
+            // add in the shader uniforms
+            ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "transform", TransformCopy));
             ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "camera", CameraCopy));
             ShaderProgram.AddUniform(new FloatUniform(ShaderTarget.Both, "Time", TimeCopy));
             ShaderProgram.AddUniform(new TextureUniform(ShaderTarget.Fragment, "Texture", TextureHandle));
 
+            // compiles the shader scripts together
             ShaderProgram.CompileProgram();
-
-            ShaderProgram["transform"].SetUniform((IDeepCopy)TransformCopy);
         }
 
         /// <summary>
@@ -122,15 +125,16 @@ namespace Graphics
         /// <param name="Offset">The relative offset in bytes of where the attribute starts.</param>
         private void LoadBufferAttribute<T>(string Name, int ArrayHandle, int Size, int Location, ref int Offset)
         {
+            // bind to current location starting from 0 and add an attribute
             GL.VertexArrayAttribBinding(ArrayHandle, Location, 0);
             GL.EnableVertexArrayAttrib(ArrayHandle, Location);
             
+            // set up format of the attribute
             // Handle, index when delivered to shader, number of elements, contains floats, already normalized so false, relative offset from 0 in bytes = 0 
             GL.VertexArrayAttribFormat(ArrayHandle, Location, Size, VertexAttribType.Float, false, Offset);
-            Offset += Size * 4; // number of elements * float size
+            Offset += Size * 4; // number of elements * float size (in bytes)
 
             // adds parameter in shader program.
-            // this will add it to the scripts.
             ShaderProgram.AddVertexParameter(new VertexParameter<T>(ShaderTarget.Vertex, Name));
         }
         
@@ -212,7 +216,7 @@ namespace Graphics
         }
         
         /// <summary>
-        /// Serializes image read from file for openGl buffer. assigns values to width and height.
+        /// Serializes image read from file for openGl buffer.
         /// </summary>
         /// <param name="width">The width of the image.</param>
         /// <param name="height">The height of the image.</param>
@@ -220,7 +224,7 @@ namespace Graphics
         /// <returns>The serialised data read from the file in rgba format.</returns>
         private float[] Load_Texture(out int width, out int height, string path)
         {
-            Bitmap BMP = (Bitmap)Image.FromFile(path);
+            Bitmap BMP = (Bitmap)System.Drawing.Image.FromFile(path);
             width = BMP.Width;
             height = BMP.Height;
             float[] Serialized_Data = new float[width * height * 4];
@@ -245,11 +249,13 @@ namespace Graphics
         /// </summary>
         public void Render()
         {
-            GL.PolygonMode(MaterialFace, PolygonMode);
             // tell openGL to use this objects program
             ShaderProgram.UseProgram();
             
+            // use current vertex array
             GL.BindVertexArray(VertexArrayHandle);
+
+            // draw these vertices in triangles using this program
             GL.DrawArrays(PrimitiveType.Triangles, 0, VertexCount);
         }
         
@@ -260,8 +266,13 @@ namespace Graphics
         public abstract void Process(float delta);
 
 
-        public virtual void OnMouseDown(MouseButtonEventArgs e) { }
-        public virtual void OnMouseUp(MouseButtonEventArgs e) { }
-        public virtual void OnMouseMove(MouseMoveEventArgs e) { }
+        /// <summary>
+        /// called when the mouse is clicked
+        /// </summary>
+        /// <param name="MousePosition"></param>
+        public virtual void OnMouseDown(MouseState MouseState) { }
+        public virtual void OnMouseUp(MouseState MouseState) { }
+        public virtual void OnMouseMove(MouseState MouseState) { }
+        public virtual void OnMouseWheel(MouseState MouseState) { }
     }
 }

@@ -3,6 +3,7 @@ using OpenTK.Windowing.Common;
 using System;
 using Graphics;
 using System.Threading.Tasks;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace GameObjects
 {
@@ -48,7 +49,6 @@ namespace GameObjects
                 return new Vector2(-Position.X / Scale.X / 2, Position.Y / Scale.Y / 2);
             }
         }
-        
         /// <summary>
         /// Zooms in and out. Preserves Camera World Position.
         /// </summary>
@@ -67,11 +67,6 @@ namespace GameObjects
                 return zoom;
             }
         }
-        
-       
-        
-        
-        
         
         /// <summary>
         /// A Camera using a matrix3x3 to control position, zoom and inputs.
@@ -93,7 +88,7 @@ namespace GameObjects
             
             basescale = Scale;
         }
-        
+
         /// <summary>
         /// Sets "zoomrate" to 0 if object ZoomID matches the last time "ZoomTo" was called.
         /// </summary>
@@ -102,42 +97,40 @@ namespace GameObjects
         {
             if (zoomID == ID) ZoomIndex = 0;
         }
-        
 
-
-        public void OnMouseDown(MouseButtonEventArgs e)
+        // uses a Action delegate to add and subtract from locally
+        private Action<Vector2> MouseMove = (MousePosition) => { /* Dont Do Anything */ }; 
+        public void OnMouseMove(MouseState MouseState) => MouseMove(MouseState.Delta);
+        public void OnMouseDown(MouseState MouseState) => MouseMove += MoveCamera;
+        public void OnMouseUp(MouseState MouseState) => MouseMove -= MoveCamera;
+        public void OnMouseWheel(MouseState MouseState) 
         {
-            
+            if (MouseState.ScrollDelta.Y > 0) ZoomBy(1); // zoom in
+            else ZoomBy(-1); // zoom out
         }
-        public void OnMouseUp(MouseButtonEventArgs e)
-        {
-
-        }
-        public void OnMouseMove(MouseMoveEventArgs e)
-        {
-            // when mouse moves add the distance its moved to the camera render position
-            // dealt with in render space as its tidier
-            // mutliply by 2 because the render space is -1 to 1
-            // negative to match renderspace axis
-            Position += new Vector2(e.Delta.X / windowsize.X * 2, -e.Delta.Y / windowsize.Y * 2);
-        }
-        
 
         /// <summary>
-        /// Zooms towards a point.
+        /// moves the camera by the change in mouse position
         /// </summary>
-        /// <param name="Position">The position to zoom into.</param>
-        /// <param name="Delta">The time passed since last Processed.</param>
-        public void ZoomTo(Vector2 Position, int Delta) 
+        /// <param name="MouseDelta">the </param>
+        private void MoveCamera(Vector2 MouseDelta) => Position += new Vector2(MouseDelta.X / windowsize.X * 2, -MouseDelta.Y / windowsize.Y * 2);
+
+
+
+        /// <summary>
+        /// Zooms in or out by a step of delta
+        /// </summary>
+        /// <param name="Step">The time passed since last Processed.</param>
+        public void ZoomBy(int Step) 
         {
             zoomID++;
-            if (ZoomIndex != 0 && MathF.Sign(Delta) != MathF.Sign(ZoomIndex)) // abrupt stop if reverse while zooming
+            if (ZoomIndex != 0 && MathF.Sign(Step) != MathF.Sign(ZoomIndex)) // abrupt stop if zooming reversed
             {
                 ResetZoomRate(zoomID);
             }
             else
             {
-                ZoomIndex += Delta;
+                ZoomIndex += Step;
                 int localID = zoomID; // needs to be local here not when ResetZoom is called
                 Task.Delay(zoomtime).ContinueWith(t => ResetZoomRate(localID)); // after zoomtime(ms) stops zooming if local ID matches zoom ID
             }
@@ -154,14 +147,14 @@ namespace GameObjects
         }
 
 
+
         /// <summary>
         /// Called on each frame update.
         /// </summary>
         /// <param name="delta">time passed since last processed.</param>
-        public void Process(float delta)
-        {
-            Zoom *= MathF.Pow(MathF.Pow(zoomrate, ZoomIndex), delta); // decrease by zoomrate in zoomtime
-        }
+        public void Process(float delta) => Zoom *= MathF.Pow(MathF.Pow(zoomrate, ZoomIndex), delta); // decrease by zoomrate in zoomtime
+
+
 
         /// <summary>
         /// Converts Screen space to world space.

@@ -43,17 +43,26 @@ namespace GameObjects
             new Vertex2D( 1, 1, 1, 0, 1, 1, 1, 1),
             };
 
+        // hides openGL MouseDown - openGl Actions only give limited arguments
+        new Action<MouseState> MouseDown;
+        new Action<MouseState> MouseUp;
+        new Action<MouseState> MouseMove;
+        new Action<MouseState> MouseWheel;
         public Window(GameWindowSettings GWS, NativeWindowSettings NWS) : base(GWS, NWS)
-        {         
+        {
+            TimeCopy = new DeepCopy<float>(() => Time, value => { Time = value; });
+            
             Camera = new Camera2D(NWS.Size, 1, 300, 0.5f);
-
+            
             MouseDown += Camera.OnMouseDown;
             MouseUp += Camera.OnMouseUp;
+            MouseWheel += Camera.OnMouseWheel;
+            MouseMove += Camera.OnMouseMove;
 
             GL.ClearColor(RefreshCol);
             this.VSync = VSyncMode.On;
 
-            TimeCopy = new DeepCopy<float>(() => Time, value => { Time = value; });
+            
         }
 
         protected override void OnResize(ResizeEventArgs e)
@@ -79,26 +88,12 @@ namespace GameObjects
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
         }
 
-        // may want to inherit these in a child class instead
-        protected override void OnMouseWheel(MouseWheelEventArgs e)
-        {
-            if (MouseState.ScrollDelta.Y > 0) // zoom in
-            {
-                Camera.ZoomTo(MousePosition, 1);
-            }
-            else // zoom out
-            {
-                Camera.ZoomTo(MousePosition, -1);
-            }
-        }
-        protected override void OnMouseDown(MouseButtonEventArgs e)
-        {
-            MouseMove += Camera.OnMouseMove;
-        }
-        protected override void OnMouseUp(MouseButtonEventArgs e)
-        {
-            MouseMove -= Camera.OnMouseMove;
-        }
+        
+        protected override void OnMouseWheel(MouseWheelEventArgs e) => MouseWheel(MouseState);
+        protected override void OnMouseDown(MouseButtonEventArgs e) => MouseDown(MouseState); //calls custom MouseDown on openGl call
+        protected override void OnMouseUp(MouseButtonEventArgs e) => MouseUp(MouseState); //calls custom MouseUp on openGl call
+        protected override void OnMouseMove(MouseMoveEventArgs e) => MouseMove(MouseState);
+
 
 
 
@@ -123,8 +118,8 @@ namespace GameObjects
 
             Camera.Process((float)e.Time);
 
+            // process and render objects
             foreach (var R in RenderList) R.Process((float)e.Time);
-
             foreach (var R in RenderList) R.Render();
             
             SwapBuffers(); // swap out screen buffer with new one

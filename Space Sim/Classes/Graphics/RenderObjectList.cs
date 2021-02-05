@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using Graphics;
 using System.Collections;
-
+using OpenTK.Mathematics;
 namespace Graphics
 {
     /* THING TO DO:
@@ -22,13 +22,21 @@ namespace Graphics
         public int Count => _List.Count;
         public bool IsReadOnly => false;
 
+        /// <summary>
+        /// returns the value at the index
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
         public RenderObject2D<Vertex> this[int index] 
         {
             get => _List[index];
             set => _List[index] = value; 
         }
 
-
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        public RenderObjectList() { }
         public void Add(RenderObject2D<Vertex> item)
         {
             item.Set_Z_Index += Update_Index;
