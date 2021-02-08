@@ -28,6 +28,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Shaders\DefaultVert.shader">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Shaders\GaussianGlowFrag.shader">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -37,8 +40,11 @@
     <None Update="Shaders\ButtonVert.shader">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Shaders\DefaultVert.shader">
+    <None Update="Shaders\AnimatedVert.shader">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Textures\Missing Texture.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Textures\1 Mercury TS.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

@@ -61,18 +61,17 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 
 /* THING TO DO:
  * Write better shaders for planets - could do some 3d mapping
- * FixToScreenSpace 
- * 
  */
 
 
 namespace Graphics
 {
+
     /// <summary>
     /// An Object that renders onto the screen.
     /// </summary>
-    /// <typeparam name="Vertex"></typeparam>
-    abstract class RenderObject2D<Vertex> : Node2D where Vertex : unmanaged
+
+    abstract class RenderObject2D : Node2D 
     {
         private readonly int VertexArrayHandle;
         private readonly int VertexBufferHandle;
@@ -82,37 +81,79 @@ namespace Graphics
         private readonly int VertexSize; // size of vertex in bytes
         private int VertexLength; // number of data points in vertex
 
-        // z index fields 
-        private static int z_index = 1;
+        public ShaderProgram ShaderProgram;
+        
+        private bool fixtoscreen = false;
+        private int z_index = 1;
+        public bool FixToScreen
+        {
+            set
+            {
+                fixtoscreen = value;
+                if (fixtoscreen) ShaderProgram["camera"].SetUniform(new DeepCopy<Matrix3>(() => Matrix3.Identity, value => { }));
+                else ShaderProgram["camera"].SetUniform(GameObjects.Window.CameraCopy);
+            }
+            get => fixtoscreen;
+        }
         public int Z_index
         {
             get => z_index; 
             set => Set_Z_Index(value);
         }
+        
         // used in RenderObjects List to update list when z index changes
-        public Action<int> Set_Z_Index = value => z_index = value;
+        public Action<int> Set_Z_Index;
 
-        public ShaderProgram ShaderProgram;
 
-        public RenderObject2D(float Rotation, Vector2 Scale, Vector2 Position, Vertex[] Vertices, DeepCopy<Matrix3> CameraCopy, DeepCopy<float> TimeCopy, string Texture, string VertexShader, string FragmentShader) : base(Rotation, Scale, Position)
+        public RenderObject2D(Vertex2D[] Vertices, string Texture, string VertexShader, string FragmentShader) : base(0, 1, 1, 0, 0)
         {
+            Set_Z_Index = value => z_index = value;
+
             // initiate the shader program with the file paths to the shaders
             ShaderProgram = new ShaderProgram(VertexShader, FragmentShader);
             
             // Buffer array is the buffer that stores the vertices. this requires shaderprogram to be initiated because it adds in the shader parameters of the vertices
-            Init_BufferArray(out VertexArrayHandle, out VertexBufferHandle, out VertexSize, Vertices);
-            this.VertexCount = Vertices.Length;
-            
-            // initiate the texture of this object. every object needs a texture the way it works right now. 
+            Init_BufferArray(out VertexArrayHandle, out VertexBufferHandle, out VertexSize, out VertexCount, Vertices);
+
+            // initiate the texture of this object. every object needs a texture -> the way it works right now. 
             TextureHandle = Init_Textures(Texture);
 
             // add in the shader uniforms
             ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "transform", TransformCopy));
-            ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "camera", CameraCopy));
-            ShaderProgram.AddUniform(new FloatUniform(ShaderTarget.Both, "Time", TimeCopy));
+            ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "camera", GameObjects.Window.CameraCopy));
+            ShaderProgram.AddUniform(new FloatUniform(ShaderTarget.Both, "Time", GameObjects.Window.TimeCopy));
             ShaderProgram.AddUniform(new TextureUniform(ShaderTarget.Fragment, "Texture", TextureHandle));
 
             // compiles the shader scripts together
+            ShaderProgram.CompileProgram();
+        }
+
+        /// <summary>
+        /// constructs square render object without passing Shader Program parameters
+        /// </summary>
+        public RenderObject2D() : base(0, 1, 1, 0, 0)
+        {
+            Set_Z_Index = value => z_index = value;
+
+            ShaderProgram = new ShaderProgram("Default", "Default");
+
+            Vertex2D[] Vertices = new Vertex2D[6] {
+                new Vertex2D(-1, 1, 0, 0, 1, 1, 1, 1),
+                new Vertex2D(-1,-1, 0, 1, 1, 1, 1, 1),
+                new Vertex2D( 1,-1, 1, 1, 1, 1, 1, 1),
+
+                new Vertex2D( 1,-1, 1, 1, 1, 1, 1, 1),
+                new Vertex2D(-1, 1, 0, 0, 1, 1, 1, 1),
+                new Vertex2D( 1, 1, 1, 0, 1, 1, 1, 1),
+                };
+
+            Init_BufferArray(out VertexArrayHandle, out VertexBufferHandle, out VertexSize, out VertexCount, Vertices);
+            // add in the shader uniforms
+            ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "transform", TransformCopy));
+            ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "camera", GameObjects.Window.CameraCopy));
+            ShaderProgram.AddUniform(new FloatUniform(ShaderTarget.Both, "Time", GameObjects.Window.TimeCopy));
+            ShaderProgram.AddUniform(new TextureUniform(ShaderTarget.Fragment, "Texture", Init_Textures("Missing Texture")));
+
             ShaderProgram.CompileProgram();
         }
 
@@ -145,12 +186,12 @@ namespace Graphics
         /// <param name="BufferHandle">The OpenGL Handle ID for the buffer.</param>
         /// <param name="VertexSize">The size of the vertex in bytes</param>
         /// <param name="Vertices">The array of vertices.</param>
-        private void Init_BufferArray(out int ArrayHandle, out int BufferHandle, out int VertexSize, Vertex[] Vertices)
+        private void Init_BufferArray(out int ArrayHandle, out int BufferHandle, out int VertexSize, out int VertexCount, Vertex2D[] Vertices)
         {
             /* using system.reflection allows me to get the size of a struct using sizeof()
              * struct needs to be 'unmanaged' to use sizeof()
              */
-            unsafe { VertexSize = sizeof(Vertex); }
+            unsafe { VertexSize = sizeof(Vertex2D); }
             
             // generate new opengl handles
             ArrayHandle = GL.GenVertexArray();
@@ -165,7 +206,7 @@ namespace Graphics
 
 
             // iterates through struct members
-            FieldInfo[] FieldInfoArray = typeof(Vertex).GetFields();
+            FieldInfo[] FieldInfoArray = typeof(Vertex2D).GetFields();
             VertexLength = FieldInfoArray.Length;
 
             int RelativeOffset = 0;
@@ -185,6 +226,8 @@ namespace Graphics
             }
             // link the vertex array and buffer and provide the step size(stride) as size of Vertex
             GL.VertexArrayVertexBuffer(ArrayHandle, 0, BufferHandle, IntPtr.Zero, VertexSize);
+
+            VertexCount = Vertices.Length;
         }
 
         /// <summary>
@@ -263,13 +306,12 @@ namespace Graphics
         /// Called on each frame update.
         /// </summary>
         /// <param name="delta">Time since process was last called.</param>
-        public abstract void Process(float delta);
+        public abstract void OnProcess(float delta);
 
 
         /// <summary>
         /// called when the mouse is clicked
         /// </summary>
-        /// <param name="MousePosition"></param>
         public virtual void OnMouseDown(MouseState MouseState) { }
         public virtual void OnMouseUp(MouseState MouseState) { }
         public virtual void OnMouseMove(MouseState MouseState) { }

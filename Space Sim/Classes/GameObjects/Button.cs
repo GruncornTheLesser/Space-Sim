@@ -19,22 +19,16 @@ namespace GameObjects
     public delegate void ButtonPress(object sender, Vector2 MousePosition, MouseButtonEventArgs e);
 
 
-    class Button : RenderObject2D<Vertex2D>
+    class Button : RenderObject2D
     {
         private bool Pressed = false;
-        public bool IsPressed
-        {
-            set => SetPressed(value);
-            get => Pressed;
-        }
-        Action<bool> SetPressed => value => Pressed = value;
 
-        public Button(Vector2 Scale, Vector2 Position, DeepCopy<Matrix3> CameraDeepCopy, DeepCopy<float> TimeCopy, ButtonPress ButtonPressedAction) : base(0, Scale, Position, Window.SquareMesh, CameraDeepCopy, TimeCopy, "Button", "Button", "Default") 
+        public Button() : base() 
         {
             
         } 
         
-        public override void Process(float delta) { }
+        public override void OnProcess(float delta) { }
 
         public override void OnMouseDown(MouseState MouseState) 
         {

@@ -10,7 +10,7 @@ namespace GameObjects
 
     /* THING TO DO:
      * have not implemented the movement while zooming. ie zoom to location - dont know if user wants this.
-     * 
+     * Specific Button for movement and controls -> not difficult less convenient right now
      */
 
     sealed class Camera2D : Node2D
@@ -26,7 +26,7 @@ namespace GameObjects
          */
         private Vector2 basescale; // used when changing window size
         private float zoom;
-        private int ZoomIndex;
+        private float ZoomIndex; // speed of zooming
         private int zoomID;
 
         private readonly float windowunit;
@@ -40,14 +40,8 @@ namespace GameObjects
         /// </summary>
         public Vector2 WorldPosition
         {
-            set
-            {
-                Position = value * 2 * -Scale;
-            }
-            get
-            {
-                return new Vector2(-Position.X / Scale.X / 2, Position.Y / Scale.Y / 2);
-            }
+            set => Position = value * 2 * -Scale;
+            get => new Vector2(-Position.X / Scale.X / 2, Position.Y / Scale.Y / 2);
         }
         /// <summary>
         /// Zooms in and out. Preserves Camera World Position.
@@ -99,8 +93,8 @@ namespace GameObjects
         }
 
         // uses a Action delegate to add and subtract from locally
-        private Action<Vector2> MouseMove = (MousePosition) => { /* Dont Do Anything */ }; 
-        public void OnMouseMove(MouseState MouseState) => MouseMove(MouseState.Delta);
+        private Action<Vector2> MouseMove = (MousePosition) => { /* Dont Do Anything By Default */ }; 
+        public void OnMouseMove(MouseState MouseState) => MouseMove(MouseState.Delta); 
         public void OnMouseDown(MouseState MouseState) => MouseMove += MoveCamera;
         public void OnMouseUp(MouseState MouseState) => MouseMove -= MoveCamera;
         public void OnMouseWheel(MouseState MouseState) 
@@ -121,7 +115,7 @@ namespace GameObjects
         /// Zooms in or out by a step of delta
         /// </summary>
         /// <param name="Step">The time passed since last Processed.</param>
-        public void ZoomBy(int Step) 
+        public void ZoomBy(float Step) 
         {
             zoomID++;
             if (ZoomIndex != 0 && MathF.Sign(Step) != MathF.Sign(ZoomIndex)) // abrupt stop if zooming reversed
@@ -152,7 +146,7 @@ namespace GameObjects
         /// Called on each frame update.
         /// </summary>
         /// <param name="delta">time passed since last processed.</param>
-        public void Process(float delta) => Zoom *= MathF.Pow(MathF.Pow(zoomrate, ZoomIndex), delta); // decrease by zoomrate in zoomtime
+        public void OnProcess(float delta) => Zoom *= MathF.Pow(MathF.Pow(zoomrate, ZoomIndex), delta); // decrease by zoomrate in zoomtime
 
 
 
@@ -163,5 +157,7 @@ namespace GameObjects
         /// <returns>The position in the world space.</returns>
         public Vector2 ScreenToWorld(Vector2 Pos) => WorldPosition + new Vector2(((2 * Pos.X / windowsize.X) - 1) / 2 / Scale.X, ((2 * Pos.Y / windowsize.Y) - 1) / 2 / Scale.Y);
 
+        
+        
     }
 }

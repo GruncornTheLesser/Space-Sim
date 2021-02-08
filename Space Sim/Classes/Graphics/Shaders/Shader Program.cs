@@ -14,12 +14,14 @@ namespace Shaders
     {
         // the handle in openGl for this program
         private int ProgramHandle;
-        // file paths to shaders
+        
+        // file paths
         private string vertpath;
         private string fragpath;
+        private string textpath;
 
         // collections for parameters
-        private Dictionary<string, UniformParameter> UniformParameters = new Dictionary<string, UniformParameter>();
+        private Dictionary<string, UniformParameter> UniformParameters = new Dictionary<string, UniformParameter>(); // only uniform parameters need to be accessible
         private List<IVertexParameter> VertexParameters = new List<IVertexParameter>();
 
         /// <summary>
@@ -67,16 +69,18 @@ namespace Shaders
         // the rendering fill modes
         public PolygonMode PolygonMode = PolygonMode.Fill;
         public MaterialFace MaterialFace = MaterialFace.FrontAndBack;
-        
-        
+
+
         public bool ready = false; // = "do the fields in this object match whats been compiled in openGL?"
+
+        public Action UpdateUniforms = () => { };
 
         public ShaderProgram(string VertexPath, string FragmentPath)
         {
             vertpath = VertexPath;
             fragpath = FragmentPath;
         }
-        
+
         /// <summary>
         /// adds a uniform parameter
         /// </summary>
@@ -84,15 +88,12 @@ namespace Shaders
         public void AddUniform(UniformParameter NewUniform)
         {
             // if parameter exists with this name already exists throw exception
-            if (UniformParameters.ContainsKey(NewUniform.name))
-            {
-                throw new Exception($"the name {NewUniform.name} is already taken on this shader program");
-            }
-             
+            if (UniformParameters.ContainsKey(NewUniform.name)) throw new Exception($"the name {NewUniform.name} is already taken on this shader program");
             ready = false; // fields no longer match whats compiled 
+            UpdateUniforms += NewUniform.UpdateUniform;
             UniformParameters[NewUniform.name] = NewUniform;
         }
-        
+
         /// <summary>
         /// adds the vertex parameter
         /// </summary>
@@ -110,9 +111,13 @@ namespace Shaders
         {
             GL.PolygonMode(MaterialFace, PolygonMode); // use this programs rendering modes
             GL.UseProgram(ProgramHandle); // tell openGL to use this object
+            UpdateUniforms();
             foreach (string name in UniformParameters.Keys) UniformParameters[name].UpdateUniform(); // update the uniforms in the shader
         }
+
         
+
+
         /// <summary>
         /// Compiles together the shaders to make the program. if any fields are changed after being compiled(not including updating uniforms) the program will need to be recompiled to see the changes.
         /// </summary>

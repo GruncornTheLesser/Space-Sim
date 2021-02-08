@@ -10,13 +10,13 @@ namespace DeepCopy
     /// <summary>
     /// A deepCopy interface for passing into functions
     /// </summary>
-    interface IDeepCopy { }
+    internal interface IDeepCopy { }
 
     /// <summary>
     /// A deep copy updates the original value when changed and vice versa. This is opposed to a shallow copy that doesnt update the original.
     /// </summary>
     /// <typeparam name="T">The type of the value being copied. T must have the new() constraint.</typeparam>
-    class DeepCopy<T> : IDeepCopy where T : new()
+    internal class DeepCopy<T> : IDeepCopy where T : new()
     {
         // 2 delegates
         private readonly Func<T> GET;
