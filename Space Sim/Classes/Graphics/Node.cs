@@ -106,5 +106,7 @@ namespace Graphics
             // set up a deep copy of the transform matrix for shader uniforms
             TransformCopy = new DeepCopy<Matrix3>(() => Transform_Matrix, value => { Transform_Matrix = value; });
         }
+    
+    
     }
 }

@@ -50,5 +50,17 @@ namespace DeepCopy
             GET = getter;
             SET = setter;
         }
+        /// <summary>
+        /// Constructs deep copy from getter function. 
+        /// </summary>
+        /// <param name="getter">The function to get the parameter. The get function must return one value of type T. eg '() => parameter'</param>
+        public DeepCopy(Func<T> getter)
+        {
+            // pass in a get and set delegates
+            GET = getter;
+            SET = value => { };
+        }
+    
+    
     }
 }

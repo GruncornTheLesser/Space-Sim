@@ -71,18 +71,20 @@ namespace Graphics
     /// An Object that renders onto the screen.
     /// </summary>
 
+    
+
+
     abstract class RenderObject2D : Node2D 
     {
+        public ShaderProgram ShaderProgram;
+
         private readonly int VertexArrayHandle;
         private readonly int VertexBufferHandle;
-        private readonly int TextureHandle;
 
         private readonly int VertexCount; // number of vertices, used in render
         private readonly int VertexSize; // size of vertex in bytes
         private int VertexLength; // number of data points in vertex
 
-        public ShaderProgram ShaderProgram;
-        
         private bool fixtoscreen = false;
         private int z_index = 1;
         public bool FixToScreen
@@ -90,7 +92,7 @@ namespace Graphics
             set
             {
                 fixtoscreen = value;
-                if (fixtoscreen) ShaderProgram["camera"].SetUniform(new DeepCopy<Matrix3>(() => Matrix3.Identity, value => { }));
+                if (fixtoscreen) ShaderProgram["camera"].SetUniform(new DeepCopy<Matrix3>(() => Matrix3.Identity));
                 else ShaderProgram["camera"].SetUniform(GameObjects.Window.CameraCopy);
             }
             get => fixtoscreen;
@@ -100,32 +102,24 @@ namespace Graphics
             get => z_index; 
             set => Set_Z_Index(value);
         }
-        
-        // used in RenderObjects List to update list when z index changes
-        public Action<int> Set_Z_Index;
 
+
+        
+        public Action<int> Set_Z_Index; // used in RenderObjects List to update list when z index changes 
 
         public RenderObject2D(Vertex2D[] Vertices, string Texture, string VertexShader, string FragmentShader) : base(0, 1, 1, 0, 0)
         {
-            Set_Z_Index = value => z_index = value;
+            AttachEvents();
 
+            Set_Z_Index = value => z_index = value;
+            
             // initiate the shader program with the file paths to the shaders
             ShaderProgram = new ShaderProgram(VertexShader, FragmentShader);
             
             // Buffer array is the buffer that stores the vertices. this requires shaderprogram to be initiated because it adds in the shader parameters of the vertices
             Init_BufferArray(out VertexArrayHandle, out VertexBufferHandle, out VertexSize, out VertexCount, Vertices);
 
-            // initiate the texture of this object. every object needs a texture -> the way it works right now. 
-            TextureHandle = Init_Textures(Texture);
-
-            // add in the shader uniforms
-            ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "transform", TransformCopy));
-            ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "camera", GameObjects.Window.CameraCopy));
-            ShaderProgram.AddUniform(new FloatUniform(ShaderTarget.Both, "Time", GameObjects.Window.TimeCopy));
-            ShaderProgram.AddUniform(new TextureUniform(ShaderTarget.Fragment, "Texture", TextureHandle));
-
-            // compiles the shader scripts together
-            ShaderProgram.CompileProgram();
+            // shader uniforms added in derived object
         }
 
         /// <summary>
@@ -133,6 +127,7 @@ namespace Graphics
         /// </summary>
         public RenderObject2D() : base(0, 1, 1, 0, 0)
         {
+            AttachEvents();
             Set_Z_Index = value => z_index = value;
 
             ShaderProgram = new ShaderProgram("Default", "Default");
@@ -148,13 +143,17 @@ namespace Graphics
                 };
 
             Init_BufferArray(out VertexArrayHandle, out VertexBufferHandle, out VertexSize, out VertexCount, Vertices);
-            // add in the shader uniforms
-            ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "transform", TransformCopy));
-            ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "camera", GameObjects.Window.CameraCopy));
-            ShaderProgram.AddUniform(new FloatUniform(ShaderTarget.Both, "Time", GameObjects.Window.TimeCopy));
-            ShaderProgram.AddUniform(new TextureUniform(ShaderTarget.Fragment, "Texture", Init_Textures("Missing Texture")));
+            
+            // shader uniforms added in derived object
+        }
 
-            ShaderProgram.CompileProgram();
+        public void AttachEvents()
+        {
+            EventManager.MouseDown += OnMouseDown;
+            EventManager.MouseUp += OnMouseUp;
+            EventManager.MouseWheel += OnMouseWheel;
+            EventManager.MouseMove += OnMouseMove;
+            EventManager.Process += OnProcess;
         }
 
         /// <summary>
@@ -235,7 +234,7 @@ namespace Graphics
         /// </summary>
         /// <param name="name">The name of the texture file in: @Graphics/Textures/[name].png</param>
         /// <returns>The texture handle ID for OpenGL.</returns>
-        private int Init_Textures(string name)
+        protected int Init_Textures(string name)
         {
             int width, height, Handle;
             float[] data = Load_Texture(out width, out height, "Textures/" + name + ".png");
@@ -245,9 +244,9 @@ namespace Graphics
 
             // bind texture to slot
             GL.BindTexture(TextureTarget.Texture2D, Handle);
-            // level ???, offset x, offset y, width, height, format, type, serialized data
+            // level of detail maybe???, offset x, offset y, width, height, format, type, serialized data
             GL.TextureSubImage2D(Handle, 0, 0, 0, width, height, PixelFormat.Rgba, PixelType.Float, data);
-            
+
             // fixes texture at edges
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
@@ -298,7 +297,7 @@ namespace Graphics
             // use current vertex array
             GL.BindVertexArray(VertexArrayHandle);
 
-            // draw these vertices in triangles using this program
+            // draw these vertices in triangles, 0 to the number of vertices
             GL.DrawArrays(PrimitiveType.Triangles, 0, VertexCount);
         }
         
@@ -312,9 +311,9 @@ namespace Graphics
         /// <summary>
         /// called when the mouse is clicked
         /// </summary>
-        public virtual void OnMouseDown(MouseState MouseState) { }
-        public virtual void OnMouseUp(MouseState MouseState) { }
-        public virtual void OnMouseMove(MouseState MouseState) { }
-        public virtual void OnMouseWheel(MouseState MouseState) { }
+        public virtual void OnMouseDown(MouseState MouseState, MouseButtonEventArgs e) { }
+        public virtual void OnMouseUp(MouseState MouseState, MouseButtonEventArgs e) { }
+        public virtual void OnMouseMove(MouseState MouseState, MouseMoveEventArgs e) { }
+        public virtual void OnMouseWheel(MouseState MouseState, MouseWheelEventArgs e) { }
     }
 }

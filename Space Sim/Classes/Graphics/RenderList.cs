@@ -17,14 +17,15 @@ namespace Graphics
     /// Sorts Render Objects by Z index
     /// </summary>
     /// <typeparam name="Vertex"></typeparam>
-    class RenderList
+    class RenderList : IEnumerable<RenderObject2D>
     {
-        private List<RenderObject2D> _List = new List<RenderObject2D>();
+        private List<string> _List = new List<string>(); // list of keys
+        private Dictionary<string, Func<RenderObject2D>> _Dict = new Dictionary<string, Func<RenderObject2D>>(); // hash table for key to the render object get function
         private int Min
         {
             get
             {
-                if (Count > 0) return _List.Min(RO => RO.Z_index);
+                if (Count > 0) return _List.Min(Key => _Dict[Key]().Z_index);
                 else return int.MaxValue;
             }
         }
@@ -32,31 +33,25 @@ namespace Graphics
         {
             get
             {
-                if (Count > 0) return _List.Max(RO => RO.Z_index);
+                if (Count > 0) return _List.Max(Key => _Dict[Key]().Z_index);
                 else return int.MinValue;
             }
         }
         public int Count => _List.Count;
 
-        public RenderObject2D this[int index]
-        {
-            get => _List[index];
-        }
-
-        /// <summary>
-        /// Constructor
-        /// </summary>
         public RenderList() { }
-        public void Add(string Key, RenderObject2D item)
+        public void Add(string Key, Func<RenderObject2D> get_item)
         {
-            item.Set_Z_Index += Update_Index;
-            if (Min >= item.Z_index) // if greater than biggest
+            get_item().Set_Z_Index += Update_Index;
+            _Dict.Add(Key, get_item);
+
+            if (Min >= get_item().Z_index) // if less than smallest
             {
-                _List.Insert(0, item); // add to start
+                _List.Insert(0, Key); // add to start
             }
-            else if (Max <= item.Z_index) // if less than smallest
+            else if (Max <= get_item().Z_index) // if greater than biggest
             {
-                _List.Add(item); // add to end
+                _List.Add(Key); // add to end
             }
             else
             {
@@ -68,7 +63,7 @@ namespace Graphics
                 while (head - tail > 1)
                 {
                     int Mid = (head + tail) / 2;
-                    if (item.Z_index > _List[Mid].Z_index)
+                    if (get_item().Z_index > _Dict[_List[Mid]]().Z_index)
                     {
                         tail = Mid;
                     }
@@ -77,14 +72,22 @@ namespace Graphics
                         head = Mid;
                     }
                 }
-                _List.Insert(++tail, item);
+                _List.Insert(++tail, Key);
             }
         }
 
         /// <summary>
         /// When Z index is updated, one object will be out of place so this can loop through and reposition it.
         /// </summary>
-        private void Update_Index(int value) => _List = _List.OrderBy(RO => RO.Z_index).ToList();
-        public IEnumerator<RenderObject2D> GetEnumerator() => _List.GetEnumerator();
+        private void Update_Index(int value) => _List = _List.OrderBy(Key => _Dict[Key]().Z_index).ToList(); // re-sort using Z index
+        
+
+        public IEnumerator<RenderObject2D> GetEnumerator()
+        {
+            // 'yield return' returns the data in packets whereas 'return' returns it as one packet
+            foreach(string Key in _List) yield return _Dict[Key]();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }

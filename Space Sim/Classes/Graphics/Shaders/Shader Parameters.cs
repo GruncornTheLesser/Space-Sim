@@ -299,9 +299,9 @@ namespace Shaders
     }
     class TextureUniform : UniformParameter 
     {
-        int parameter;
-        public TextureUniform(ShaderTarget ShaderTarget, string Name, int TextureHandle) : base(ShaderTarget, Name) => parameter = TextureHandle;
-        public override void UpdateUniform() => GL.BindTextures(0, 1, new int[1] { parameter });
+        DeepCopy<int> parameter;
+        public TextureUniform(ShaderTarget ShaderTarget, string Name, DeepCopy<int> Texture) : base(ShaderTarget, Name) => parameter = Texture;
+        public override void UpdateUniform() => GL.BindTextures(0, 1, new int[1] { parameter.Value });
         public override string VertDefinition(ref int Location)
         {
             if (shadertarget == ShaderTarget.Fragment) return "";
@@ -312,6 +312,6 @@ namespace Shaders
             if (shadertarget == ShaderTarget.Vertex) return "";
             return $"uniform sampler2D {name};{Environment.NewLine}";
         }
-        public override void SetUniform(IDeepCopy DeepCopy) => throw new Exception("Currently cant set texture this way. try ");
+        public override void SetUniform(IDeepCopy DeepCopy) => throw new Exception("Currently can't set texture this way.");
     }
 }

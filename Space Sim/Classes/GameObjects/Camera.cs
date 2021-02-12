@@ -29,19 +29,25 @@ namespace GameObjects
         private float ZoomIndex; // speed of zooming
         private int zoomID;
 
-        private readonly float windowunit;
-        private Vector2 windowsize;
+        public readonly float windowunit;
+        public Vector2 windowsize;
 
         private readonly int zoomtime;
         private readonly float zoomrate;
+
+        public MouseButton MovementButton = MouseButton.Button1;
+
+        /// <summary>
+        /// returns matrix for transforming between window view in pixels for renderobjects fixed to screen
+        /// </summary>
 
         /// <summary>
         /// The center point of the camera in the world space. Different from "position" which is render space
         /// </summary>
         public Vector2 WorldPosition
         {
-            set => Position = value * 2 * -Scale;
-            get => new Vector2(-Position.X / Scale.X / 2, Position.Y / Scale.Y / 2);
+            get => new Vector2(-Position.X / Scale.X, -Position.Y / Scale.Y);
+            set => Position = -value * Scale;
         }
         /// <summary>
         /// Zooms in and out. Preserves Camera World Position.
@@ -61,7 +67,7 @@ namespace GameObjects
                 return zoom;
             }
         }
-        
+
         /// <summary>
         /// A Camera using a matrix3x3 to control position, zoom and inputs.
         /// </summary>
@@ -71,33 +77,53 @@ namespace GameObjects
         /// <param name="ZoomRate">The rate at which the camera scales during zoom.</param>
         public Camera2D(Vector2 WindowSize, float WindowUnit, int ZoomTime, float ZoomRate) : base(0, 1f / WindowSize.X / WindowUnit, (1f / WindowSize.Y / WindowUnit) * (WindowSize.Y / WindowSize.X), 0, 0)
         {
+            AttachEvents();
+
             zoomID = 0;
             this.ZoomIndex = 0;
             zoom = 1;
-            
+
             windowunit = WindowUnit;
 
             zoomrate = ZoomRate;
             zoomtime = ZoomTime;
-            
+
             basescale = Scale;
+        }
+
+        public void AttachEvents()
+        {
+            EventManager.MouseDown += OnMouseDown;
+            EventManager.MouseUp += OnMouseUp;
+            EventManager.MouseWheel += OnMouseWheel;
+            EventManager.MouseMove += OnMouseMove;
+            EventManager.Process += OnProcess;
         }
 
         /// <summary>
         /// Sets "zoomrate" to 0 if object ZoomID matches the last time "ZoomTo" was called.
         /// </summary>
         /// <param name="ID">The local ZoomID.</param>
-        private void ResetZoomRate(int ID) 
+        private void ResetZoomRate(int ID)
         {
             if (zoomID == ID) ZoomIndex = 0;
         }
 
-        // uses a Action delegate to add and subtract from locally
-        private Action<Vector2> MouseMove = (MousePosition) => { /* Dont Do Anything By Default */ }; 
-        public void OnMouseMove(MouseState MouseState) => MouseMove(MouseState.Delta); 
-        public void OnMouseDown(MouseState MouseState) => MouseMove += MoveCamera;
-        public void OnMouseUp(MouseState MouseState) => MouseMove -= MoveCamera;
-        public void OnMouseWheel(MouseState MouseState) 
+        // uses a Action delegate to add and subtract from events
+        private Action<Vector2> MouseMove = (MousePosition) => { /* Dont Do Anything By Default */ };
+        public void OnMouseDown(MouseState MouseState, MouseButtonEventArgs e)
+        {
+            if (e.Button == MovementButton) MouseMove += MoveCamera;
+        }
+        public void OnMouseUp(MouseState MouseState, MouseButtonEventArgs e) 
+        {
+            if (e.Button == MovementButton) MouseMove -= MoveCamera;
+        }
+        public void OnMouseMove(MouseState MouseState, MouseMoveEventArgs e)
+        {
+            MouseMove(MouseState.Delta);
+        }
+        public void OnMouseWheel(MouseState MouseState, MouseWheelEventArgs e) 
         {
             if (MouseState.ScrollDelta.Y > 0) ZoomBy(1); // zoom in
             else ZoomBy(-1); // zoom out
@@ -115,7 +141,7 @@ namespace GameObjects
         /// Zooms in or out by a step of delta
         /// </summary>
         /// <param name="Step">The time passed since last Processed.</param>
-        public void ZoomBy(float Step) 
+        private void ZoomBy(float Step) 
         {
             zoomID++;
             if (ZoomIndex != 0 && MathF.Sign(Step) != MathF.Sign(ZoomIndex)) // abrupt stop if zooming reversed
@@ -126,7 +152,7 @@ namespace GameObjects
             {
                 ZoomIndex += Step;
                 int localID = zoomID; // needs to be local here not when ResetZoom is called
-                Task.Delay(zoomtime).ContinueWith(t => ResetZoomRate(localID)); // after zoomtime(ms) stops zooming if local ID matches zoom ID
+                Task.Delay(zoomtime).ContinueWith(ID => ResetZoomRate(localID)); // after zoomtime(ms) stops zooming if local ID matches zoom ID
             }
         }
         
@@ -140,8 +166,6 @@ namespace GameObjects
             basescale = new Vector2(zoom / WindowSize.X / windowunit, zoom / WindowSize.Y / windowunit);
         }
 
-
-
         /// <summary>
         /// Called on each frame update.
         /// </summary>
@@ -150,12 +174,6 @@ namespace GameObjects
 
 
 
-        /// <summary>
-        /// Converts Screen space to world space.
-        /// </summary>
-        /// <param name="Pos">the pixel position on the screen.</param>
-        /// <returns>The position in the world space.</returns>
-        public Vector2 ScreenToWorld(Vector2 Pos) => WorldPosition + new Vector2(((2 * Pos.X / windowsize.X) - 1) / 2 / Scale.X, ((2 * Pos.Y / windowsize.Y) - 1) / 2 / Scale.Y);
 
         
         
