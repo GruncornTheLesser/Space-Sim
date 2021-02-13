@@ -18,12 +18,15 @@ namespace Shaders
         // file paths
         private string vertpath;
         private string fragpath;
-        private string textpath;
 
         // collections for parameters
         private Dictionary<string, UniformParameter> UniformParameters = new Dictionary<string, UniformParameter>(); // only uniform parameters need to be accessible
+        private Dictionary<string, TextureUniform> UniformTextures = new Dictionary<string, TextureUniform>();
         private List<IVertexParameter> VertexParameters = new List<IVertexParameter>();
-
+        
+        // the rendering fill modes
+        public PolygonMode PolygonMode = PolygonMode.Fill;
+        public MaterialFace MaterialFace = MaterialFace.FrontAndBack;
         /// <summary>
         /// Get uniform parameter. used for setting uniform after program has been compliled.
         /// </summary>
@@ -31,8 +34,17 @@ namespace Shaders
         /// <returns></returns>
         public UniformParameter this[string Name]
         {
-            get => UniformParameters[Name];
-            // cannot set like this.
+            get
+            {
+                if (UniformParameters.ContainsKey(Name)) return UniformParameters[Name];
+                else if (UniformTextures.ContainsKey(Name)) return UniformTextures[Name];
+                else return null;
+            }
+            set
+            {
+                RemoveUniform(Name);
+                AddUniform(value);
+            }
         }
 
         /// <summary>
@@ -66,11 +78,6 @@ namespace Shaders
             }
         }
 
-        // the rendering fill modes
-        public PolygonMode PolygonMode = PolygonMode.Fill;
-        public MaterialFace MaterialFace = MaterialFace.FrontAndBack;
-
-
         public bool ready = false; // = "do the fields in this object match whats been compiled in openGL?"
 
         public Action UpdateUniforms = () => { };
@@ -90,8 +97,31 @@ namespace Shaders
             // if parameter exists with this name already exists throw exception
             if (UniformParameters.ContainsKey(NewUniform.name)) throw new Exception($"the name {NewUniform.name} is already taken on this shader program");
             ready = false; // fields no longer match whats compiled 
-            UpdateUniforms += NewUniform.UpdateUniform;
-            UniformParameters[NewUniform.name] = NewUniform;
+            UpdateUniforms += NewUniform.OnUpdateUniform;
+
+            if (NewUniform.GetType() == typeof(TextureUniform))
+            {
+                ((TextureUniform)NewUniform).unit = UniformTextures.Count;
+                UniformTextures[NewUniform.name] = (TextureUniform)NewUniform;
+            }
+            else
+            {
+                UniformParameters[NewUniform.name] = NewUniform;
+            }
+
+
+            
+        }
+        
+        /// <summary>
+        /// removes a uniform parameter
+        /// </summary>
+        /// <param name="NewUniform"></param>
+        public void RemoveUniform(string Name)
+        {
+            ready = false;
+            UpdateUniforms -= UniformParameters[Name].OnUpdateUniform;
+            UniformParameters.Remove(Name);
         }
 
         /// <summary>
@@ -112,11 +142,10 @@ namespace Shaders
             GL.PolygonMode(MaterialFace, PolygonMode); // use this programs rendering modes
             GL.UseProgram(ProgramHandle); // tell openGL to use this object
             UpdateUniforms();
-            foreach (string name in UniformParameters.Keys) UniformParameters[name].UpdateUniform(); // update the uniforms in the shader
+            foreach (string name in UniformParameters.Keys) UniformParameters[name].OnUpdateUniform(); // update the uniforms in the shader
+            foreach (string name in UniformTextures.Keys) UniformTextures[name].OnUpdateUniform();
+            
         }
-
-        
-
 
         /// <summary>
         /// Compiles together the shaders to make the program. if any fields are changed after being compiled(not including updating uniforms) the program will need to be recompiled to see the changes.
@@ -191,18 +220,20 @@ namespace Shaders
 
             // the order in which the varaibles are packed and unpacked from the parameter buffer
             int location = 0;
-
             if (shadertype == ShaderType.VertexShader)
             {
                 // generate vertex defintions
                 foreach (IVertexParameter P in VertexParameters) code += P.VertDefinition(ref location);
                 // generate uniform definitions
                 foreach (string name in UniformParameters.Keys) code += UniformParameters[name].VertDefinition(ref location);
+                
+                //foreach (string name in UniformTextures.Keys) code += UniformTextures[name].VertDefinition(ref location);
             }
             else
             {
                 // generate uniform definitions
                 foreach (string name in UniformParameters.Keys) code += UniformParameters[name].FragDefinition(ref location);
+                foreach (string name in UniformTextures.Keys) code += UniformTextures[name].FragDefinition(ref location);
                 // only uniform parameters can go into the fragments shader
             }
 

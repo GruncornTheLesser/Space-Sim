@@ -107,7 +107,7 @@ namespace Graphics
         
         public Action<int> Set_Z_Index; // used in RenderObjects List to update list when z index changes 
 
-        public RenderObject2D(Vertex2D[] Vertices, string Texture, string VertexShader, string FragmentShader) : base(0, 1, 1, 0, 0)
+        public RenderObject2D(Vertex2D[] Vertices, string VertexShader, string FragmentShader) : base(0, 1, 1, 0, 0)
         {
             AttachEvents();
 

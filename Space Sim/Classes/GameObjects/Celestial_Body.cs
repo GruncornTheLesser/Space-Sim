@@ -36,7 +36,7 @@ namespace GameObjects
             set
             {
                 Rot = value;
-                RotMat = Matrix3.CreateRotationX(Rot.X) * Matrix3.CreateRotationY(Rot.Y) * Matrix3.CreateRotationZ(Rot.Z);
+                RotMat = Matrix3.CreateRotationX(Rot.X) * Matrix3.CreateRotationZ(Rot.Z) * Matrix3.CreateRotationY(Rot.Y); // want to rotate Y first
             }
         }
         public bool Adaptive_lighting = false; // used for sun
@@ -45,10 +45,12 @@ namespace GameObjects
         private Matrix3 RotMat;
         
 
-        public Celestial_Body(Vector2 Scale, Vector2 Position, string Texture) : base(Window.SquareMesh, Texture, "Default", "Planet")
+        public Celestial_Body(Vector2 Scale, Vector2 Position, string Texture) : base(Window.SquareMesh, "Default", "Planet")
         {
             this.Scale = Scale;
             this.Position = Position;
+            Z_index = 2;
+
             TextureHandle = Init_Textures(Texture);
             // default 2d shader parameters
             ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "transform", TransformCopy));

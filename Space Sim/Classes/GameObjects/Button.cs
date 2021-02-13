@@ -13,110 +13,71 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace GameObjects
 {
-    /* THINGS TO DO:
-     * Needs access to world coordinates maybe use static class?
+    /* THING TO DO:
+     * Change Texture Passing cos it doesnt work with more than 1 texture
      */
-    public delegate void ButtonPress(object sender, Vector2 MousePosition, MouseButtonEventArgs e);
 
-
-    class Button : RenderObject2D
+    class SliderButton : RenderObject2D
     {
-        
-        private Vector2[] HitBox = {
-            new Vector2(-1, 1),
-            new Vector2(1, 1),
-            new Vector2(1, -1),
-            new Vector2(-1, -1)
-            };
+        public float Percentage;
 
-        private int PressedTexure;
-        private int UnPressedTexture;
-        private int CurrentTexture;
-
-        private bool button_down = false;
-        public bool Button_Down
+        public SliderButton() : base(Window.SquareMesh, "Default", "Slider")
         {
-            get => button_down;
-            private set
-            {
-                button_down = value;
-                if (button_down) CurrentTexture = PressedTexure;
-                else CurrentTexture = UnPressedTexture;
-            }
+            ShaderProgram = new ShaderProgram("Default", "SliderButton");
+            ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "transform", TransformCopy));
+            ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "camera", Window.CameraCopy));
+            ShaderProgram.AddUniform(new FloatUniform(ShaderTarget.Both, "Time", EventManager.TimeCopy));
+            ShaderProgram.AddUniform(new FloatUniform(ShaderTarget.Fragment, "Slider", new DeepCopy<float>(() => Percentage)));
+            ShaderProgram.CompileProgram();
         }
 
+        public override void OnProcess(float delta) { }
+    }
+    class PressButton : RenderObject2D
+    {
+        public ClickBox clickbox;
+        private int PressedTexture;
+        private int UnPressedTexture;
+        private int BorderTexture;
+        private int InsideTexture;
 
-        public Action ButtonPress;
-        public Action ButtonRelease;
-        public MouseButton ActionButton = MouseButton.Button1;
-
-        public Button() : base() 
+        public PressButton(Vector2 Position, Vector2 Scale, string Button) : base(Window.SquareMesh, "Default", "PressButton")
         {
-            PressedTexure = Init_Textures("Button textures/Button_Pressed");
+            clickbox = new ClickBox(new Vector2[] { new Vector2(-1, 1), new Vector2(1, 1), new Vector2(1, -1), new Vector2(-1, -1) }, MouseButton.Button1, () => Transform_Matrix);
+
+            InsideTexture = Init_Textures("Button textures/" + Button);
+            PressedTexture = Init_Textures("Button textures/Button_Pressed");
             UnPressedTexture = Init_Textures("Button textures/Button_UnPressed");
-            CurrentTexture = UnPressedTexture;
+            BorderTexture = UnPressedTexture;
 
             ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "transform", TransformCopy));
             ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "camera", Window.CameraCopy));
             ShaderProgram.AddUniform(new FloatUniform(ShaderTarget.Both, "Time", EventManager.TimeCopy));
-            ShaderProgram.AddUniform(new TextureUniform(ShaderTarget.Fragment, "Texture", new DeepCopy<int>(() => CurrentTexture)));
+
+            ShaderProgram.AddUniform(new TextureUniform(ShaderTarget.Fragment, "BorderTexture", new DeepCopy<int>(() => BorderTexture)));
+            ShaderProgram.AddUniform(new TextureUniform(ShaderTarget.Fragment, "InsideTexture", new DeepCopy<int>(() => InsideTexture)));
+            
 
             ShaderProgram.CompileProgram();
 
-            ButtonPress = () => Button_Down = true;
-            ButtonRelease = () => Button_Down = false;
+            Z_index = 3;
 
-            Z_index = 10;
-            Scale = new Vector2(0.1f, 0.1f);
-            Position = new Vector2(0.9f, 0.9f);
+            this.Position = Position;
+            this.Scale = Scale;
+
             FixToScreen = true;
 
-            for(int i = 0; i < HitBox.Length; i++)
-            {
-                HitBox[i] = (Transform_Matrix * new Vector3(HitBox[i].X, HitBox[i].Y, 1)).Xy;
-            }
+            clickbox.Click += () => { 
+                BorderTexture = PressedTexture;
+            };
+            clickbox.UnClick += () => { 
+                BorderTexture = UnPressedTexture;
+            };
 
-            
-        } 
-        
+        }
         public override void OnProcess(float delta) { }
 
-        public override void OnMouseDown(MouseState MouseState, MouseButtonEventArgs e) 
-        {
-            if (PointInPolygon(Window.MouseToScreen(MouseState.Position), HitBox) && e.Button == ActionButton) 
-                ButtonPress();
-        }
-        public override void OnMouseUp(MouseState MouseState, MouseButtonEventArgs e) 
-        {
-            if (button_down && e.Button == ActionButton) ButtonRelease();
-        }
-        public override void OnMouseMove(MouseState MouseState, MouseMoveEventArgs e) { }
-        public override void OnMouseWheel(MouseState MouseState, MouseWheelEventArgs e) { }
-
-
-        // could seperate off into a static geometry class
-        static private float cross(Vector2 V1, Vector2 V2) => V1.X * V2.Y - V2.X* V1.Y;
-        static private bool PointInPolygon(Vector2 P, Vector2[] Polygon) 
-        {
-            // assumes concave shape
-            bool AllPositive = true, AllNegative = true;
-            for (int i = 0; i < Polygon.Length; i++)
-            {
-                Vector2 V1, V2;
-                float D;
-                V1 = Polygon[i % Polygon.Length]; // first vertex
-                V2 = Polygon[(i + 1) % Polygon.Length]; // second vertex
-                // V3 = point
-                D = cross(P, V1) + cross(V1, V2) + cross(V2, P); // the determinate of the triangle V1, V2, V3
-                
-                if (D > 0) AllNegative = false;
-                if (D < 0) AllPositive = false;
-            }
-            // depending on the winding of the triangle clockwise or anti clockwise
-            // point is inside the triangle if all determinates are positive or all are negative
-            if (AllPositive || AllNegative) return true;
-            else return false;
-        }
     }
-    
+
+
 }

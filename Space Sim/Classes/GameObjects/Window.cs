@@ -33,13 +33,13 @@ namespace GameObjects
         internal static Random RNG = new Random();
 
         internal static readonly Vertex2D[] SquareMesh = new Vertex2D[6] {
-            new Vertex2D(-1, 1, 0, 0, 1, 1, 1, 1),
-            new Vertex2D(-1,-1, 0, 1, 1, 1, 1, 1),
-            new Vertex2D( 1,-1, 1, 1, 1, 1, 1, 1),
+            new Vertex2D(-0.5f, 0.5f, 0, 0, 1, 1, 1, 1),
+            new Vertex2D(-0.5f,-0.5f, 0, 1, 1, 1, 1, 1),
+            new Vertex2D( 0.5f,-0.5f, 1, 1, 1, 1, 1, 1),
 
-            new Vertex2D( 1,-1, 1, 1, 1, 1, 1, 1),
-            new Vertex2D(-1, 1, 0, 0, 1, 1, 1, 1),
-            new Vertex2D( 1, 1, 1, 0, 1, 1, 1, 1),
+            new Vertex2D( 0.5f,-0.5f, 1, 1, 1, 1, 1, 1),
+            new Vertex2D(-0.5f, 0.5f, 0, 0, 1, 1, 1, 1),
+            new Vertex2D( 0.5f, 0.5f, 1, 0, 1, 1, 1, 1),
             }; // for convenience
         
 
@@ -60,7 +60,8 @@ namespace GameObjects
         {
             // million km // (696.3f * 2) * 20
             Celestial_Body S1 = new Celestial_Body(new Vector2( 128 /*696.3f * 2*/), new Vector2(128, 128), TextureRes + "earth");
-            Button B1 = new Button();
+            RenderObject2D B1 = new PressButton(new Vector2(0.9f), new Vector2(0.2f), "Button_home");
+            //RenderObject2D B2 = new SliderButton();
             /* 
             Point_Mass P1 = new Point_Mass(new Vector2(2.4f * 2) * 200,  new Vector2(57900f, 0), TextureRes + "mercury");
             Point_Mass P2 = new Point_Mass(new Vector2(6.0f * 2) * 200,  new Vector2(108000f, 0), TextureRes + "venus");
@@ -75,6 +76,8 @@ namespace GameObjects
             // remove later
             RenderList.Add("S1", () => S1);
             RenderList.Add("B1", () => B1);
+            //RenderList.Add("B2", () => B2);
+
             /*
             RenderList.Add("P1", () => P1);
             RenderList.Add("P2", () => P2); 
