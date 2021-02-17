@@ -13,10 +13,6 @@ namespace Graphics
         /// the matrix transform. setting this directly will not update rotation, position or scale
         /// </summary>
         public Matrix3 Transform_Matrix;
-        /// <summary>
-        /// a deep copy of the matrix for using in the shader
-        /// </summary>
-        public DeepCopy<Matrix3> TransformCopy;
 
         private float rotation;
         private Vector2 scale;
@@ -89,9 +85,6 @@ namespace Graphics
                     scale.X * MathF.Sin(rotation), scale.Y * MathF.Cos(rotation), position.Y,
                     0, 0, 1
                     );
-
-            // set up a deep copy of the transform matrix for shader uniforms
-            TransformCopy = new DeepCopy<Matrix3>(() => Transform_Matrix, value => { Transform_Matrix = value; });
         }
         public Node2D(float rotation, float scaleX, float scaleY, float positionX, float positionY)
         {
@@ -103,10 +96,6 @@ namespace Graphics
                     scaleX * MathF.Sin(rotation), scaleY * MathF.Cos(rotation), positionY,
                     0, 0, 1
                     );
-            // set up a deep copy of the transform matrix for shader uniforms
-            TransformCopy = new DeepCopy<Matrix3>(() => Transform_Matrix, value => { Transform_Matrix = value; });
         }
-    
-    
     }
 }

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
-using System.Reflection;
 using OpenTK.Mathematics;
 using OpenTK.Graphics.OpenGL4;
 using System.Drawing;
@@ -60,7 +59,7 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 
 
 /* THING TO DO:
- * Write better shaders for planets - could do some 3d mapping
+ * static Texture manager object
  */
 
 
@@ -69,21 +68,18 @@ namespace Graphics
 
     /// <summary>
     /// An Object that renders onto the screen.
+    /// Button hitbox doesnt change on window rescale
     /// </summary>
 
-    
 
-
-    abstract class RenderObject2D : Node2D 
+    abstract class RenderObject2D : Node2D
     {
         public ShaderProgram ShaderProgram;
 
         private readonly int VertexArrayHandle;
         private readonly int VertexBufferHandle;
 
-        private readonly int VertexCount; // number of vertices, used in render
-        private readonly int VertexSize; // size of vertex in bytes
-        private int VertexLength; // number of data points in vertex
+        // private readonly int VertexCount; // number of vertices, used in render
 
         private bool fixtoscreen = false;
         private int z_index = 1;
@@ -92,21 +88,33 @@ namespace Graphics
             set
             {
                 fixtoscreen = value;
-                if (fixtoscreen) ShaderProgram["camera"].SetUniform(new DeepCopy<Matrix3>(() => Matrix3.Identity));
-                else ShaderProgram["camera"].SetUniform(GameObjects.Window.CameraCopy);
+                if (fixtoscreen) ShaderProgram["camera"].SetUniform(new DeepCopy<Matrix3>(GameObjects.Window.Get_BaseMat));
+                else ShaderProgram["camera"].SetUniform(new DeepCopy<Matrix3>(GameObjects.Window.Get_CamMat));
             }
             get => fixtoscreen;
         }
         public int Z_index
         {
-            get => z_index; 
+            get => z_index;
             set => Set_Z_Index(value);
         }
-
-
-        
         public Action<int> Set_Z_Index; // used in RenderObjects List to update list when z index changes 
+        public PrimitiveType RenderingType = PrimitiveType.Triangles;
 
+        private Vertex2D[] vertices;
+        public Vertex2D[] Vertices
+        {
+            get => vertices;
+            set
+            {
+                vertices = value;
+
+                GL.BindVertexArray(VertexArrayHandle);
+                GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferHandle);
+                GL.BufferData(BufferTarget.ArrayBuffer, (IntPtr)(Vertex2D.SizeInBytes * vertices.Length), vertices, BufferUsageHint.StreamDraw);
+
+            }
+        }
         public RenderObject2D(Vertex2D[] Vertices, string VertexShader, string FragmentShader) : base(0, 1, 1, 0, 0)
         {
             AttachEvents();
@@ -115,9 +123,9 @@ namespace Graphics
             
             // initiate the shader program with the file paths to the shaders
             ShaderProgram = new ShaderProgram(VertexShader, FragmentShader);
-            
+
             // Buffer array is the buffer that stores the vertices. this requires shaderprogram to be initiated because it adds in the shader parameters of the vertices
-            Init_BufferArray(out VertexArrayHandle, out VertexBufferHandle, out VertexSize, out VertexCount, Vertices);
+            Init_BufferArray(out VertexArrayHandle, out VertexBufferHandle, Vertices);
 
             // shader uniforms added in derived object
         }
@@ -132,7 +140,7 @@ namespace Graphics
 
             ShaderProgram = new ShaderProgram("Default", "Default");
 
-            Vertex2D[] Vertices = new Vertex2D[6] {
+            Vertex2D[] Square = new Vertex2D[6] {
                 new Vertex2D(-1, 1, 0, 0, 1, 1, 1, 1),
                 new Vertex2D(-1,-1, 0, 1, 1, 1, 1, 1),
                 new Vertex2D( 1,-1, 1, 1, 1, 1, 1, 1),
@@ -142,7 +150,7 @@ namespace Graphics
                 new Vertex2D( 1, 1, 1, 0, 1, 1, 1, 1),
                 };
 
-            Init_BufferArray(out VertexArrayHandle, out VertexBufferHandle, out VertexSize, out VertexCount, Vertices);
+            Init_BufferArray(out VertexArrayHandle, out VertexBufferHandle, Square);
             
             // shader uniforms added in derived object
         }
@@ -177,56 +185,47 @@ namespace Graphics
             // adds parameter in shader program.
             ShaderProgram.AddVertexParameter(new VertexParameter<T>(ShaderTarget.Vertex, Name));
         }
-        
+        private void LoadBufferAttribute<T>(ref int Location, ref int ByteOffset, int ArrayHandle, string Name) where T : unmanaged
+        {
+            int ByteSize; // the size of this type in bytes
+            unsafe { ByteSize = sizeof(T); }
+
+            GL.VertexArrayAttribBinding(ArrayHandle, Location, 0); // generates a new attribute binding to location vertex buffer array
+            GL.EnableVertexArrayAttrib(ArrayHandle, Location); // enables the attribute binding
+            GL.VertexArrayAttribFormat(ArrayHandle, Location, ByteSize / 4, VertexAttribType.Float, false, ByteOffset);
+
+            Location++;
+            ByteOffset += ByteSize;
+
+            // adds parameter in shader program.
+            ShaderProgram.AddVertexParameter(new VertexParameter<T>(ShaderTarget.Vertex, Name));
+
+        }
         /// <summary>
         /// Creates an array and buffer in openGl such that the data in the vertices can be unpacked.
         /// </summary>
         /// <param name="ArrayHandle">The OpenGL Handle ID for the array.</param>
         /// <param name="BufferHandle">The OpenGL Handle ID for the buffer.</param>
-        /// <param name="VertexSize">The size of the vertex in bytes</param>
-        /// <param name="Vertices">The array of vertices.</param>
-        private void Init_BufferArray(out int ArrayHandle, out int BufferHandle, out int VertexSize, out int VertexCount, Vertex2D[] Vertices)
+        private void Init_BufferArray(out int ArrayHandle, out int BufferHandle, Vertex2D[] Vertices)
         {
-            /* using system.reflection allows me to get the size of a struct using sizeof()
-             * struct needs to be 'unmanaged' to use sizeof()
-             */
-            unsafe { VertexSize = sizeof(Vertex2D); }
-            
-            // generate new opengl handles
+            // generates and binds vertex array object
             ArrayHandle = GL.GenVertexArray();
-            BufferHandle = GL.GenBuffer();
-            
-            // bind new array and buffer
             GL.BindVertexArray(ArrayHandle);
-            GL.BindBuffer(BufferTarget.ArrayBuffer, BufferHandle);
             
-            // create new buffer storage of vertice data
-            GL.NamedBufferStorage(BufferHandle, VertexSize * Vertices.Length, Vertices, BufferStorageFlags.MapWriteBit);
+            // add vertex attributes in openGl and shaderprogram
+            int Location = 0;
+            int ByteOffset = 0;
+            LoadBufferAttribute<Vector2>(ref Location, ref ByteOffset, ArrayHandle, "VertUV");
+            LoadBufferAttribute<Vector2>(ref Location, ref ByteOffset, ArrayHandle, "TextureUV");
+            LoadBufferAttribute<Vector4>(ref Location, ref ByteOffset, ArrayHandle, "VertColour");
+            
+            // generates and binds vertex buffer object
+            BufferHandle = GL.GenBuffer();
+            GL.BindBuffer(BufferTarget.ArrayBuffer, BufferHandle); // use this buffer
 
+            GL.VertexArrayVertexBuffer(ArrayHandle, 0, BufferHandle, IntPtr.Zero, Vertex2D.SizeInBytes); // assigns vertice data
 
-            // iterates through struct members
-            FieldInfo[] FieldInfoArray = typeof(Vertex2D).GetFields();
-            VertexLength = FieldInfoArray.Length;
-
-            int RelativeOffset = 0;
-            for (int location = 0; location < VertexLength; location++)
-            {
-                Type T = FieldInfoArray[location].FieldType;
-                string Name = FieldInfoArray[location].Name;
-                if (T == typeof(Vector2)) LoadBufferAttribute<Vector2>(Name, ArrayHandle, 2, location, ref RelativeOffset);
-                else if (T == typeof(Vector3)) LoadBufferAttribute<Vector3>(Name, ArrayHandle, 3, location, ref RelativeOffset);
-                else if (T == typeof(Vector4)) LoadBufferAttribute<Vector4>(Name, ArrayHandle, 4, location, ref RelativeOffset);
-                else if (T == typeof(Color4)) LoadBufferAttribute<Vector4>(Name, ArrayHandle, 4, location, ref RelativeOffset);
-                else if (T == typeof(float)) LoadBufferAttribute<float>(Name, ArrayHandle, 1, location, ref RelativeOffset);
-                else if (T == typeof(Int32)) LoadBufferAttribute<Int32>(Name, ArrayHandle, 1, location, ref RelativeOffset);
-                else throw new Exception("RenderObject failed to load type " + T.ToString() + " into buffer array"); 
-                // shouldnt be needed as its already known that its unmanaged
-
-            }
-            // link the vertex array and buffer and provide the step size(stride) as size of Vertex
-            GL.VertexArrayVertexBuffer(ArrayHandle, 0, BufferHandle, IntPtr.Zero, VertexSize);
-
-            VertexCount = Vertices.Length;
+            this.Vertices = Vertices;
         }
 
         /// <summary>
@@ -291,14 +290,15 @@ namespace Graphics
         /// </summary>
         public void Render()
         {
+            TextureManager.TexturesLoaded = 0;
             // tell openGL to use this objects program
             ShaderProgram.UseProgram();
-            
+
             // use current vertex array
             GL.BindVertexArray(VertexArrayHandle);
 
             // draw these vertices in triangles, 0 to the number of vertices
-            GL.DrawArrays(PrimitiveType.Triangles, 0, VertexCount);
+            GL.DrawArrays(RenderingType, 0, Vertices.Length);
         }
         
         /// <summary>
@@ -307,13 +307,32 @@ namespace Graphics
         /// <param name="delta">Time since process was last called.</param>
         public abstract void OnProcess(float delta);
 
-
         /// <summary>
         /// called when the mouse is clicked
         /// </summary>
+        /// <param name="MouseState">the state of the mouse.</param>
+        /// <param name="e">event arguments of the button click.</param>
         public virtual void OnMouseDown(MouseState MouseState, MouseButtonEventArgs e) { }
+        
+        /// <summary>
+        /// when the mouse button releases
+        /// </summary>
+        /// <param name="MouseState">the state of the mouse.</param>
+        /// <param name="e">event arguments of the button click.</param>
         public virtual void OnMouseUp(MouseState MouseState, MouseButtonEventArgs e) { }
+        
+        /// <summary>
+        /// when the mouse moves.
+        /// </summary>
+        /// <param name="MouseState">the state of the mouse.</param>
+        /// <param name="e">event arguments of the button move.</param>
         public virtual void OnMouseMove(MouseState MouseState, MouseMoveEventArgs e) { }
+        
+        /// <summary>
+        /// called when mouse wheel scrolls.
+        /// </summary>
+        /// <param name="MouseState">the state of the mouse.</param>
+        /// <param name="e">event arguments of the wheel scroll.</param>
         public virtual void OnMouseWheel(MouseState MouseState, MouseWheelEventArgs e) { }
     }
 }

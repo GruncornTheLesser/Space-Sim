@@ -2,6 +2,8 @@
 using OpenTK.Mathematics;
 using System;
 using DeepCopy;
+using Graphics;
+
 namespace Shaders
 {
 
@@ -189,9 +191,16 @@ namespace Shaders
         /// <param name="Name">the name of this parameter</param>
         public FloatUniform(ShaderTarget ShaderTarget, string Name) : base(ShaderTarget, Name) { }
         /// <summary>
+        /// defines declared parameter with get func
+        /// </summary>
+        /// <param name="ShaderTarget">the shader script this parameter is used in</param>
+        /// <param name="Name">the name of this parameter</param>
+        /// <param name="get_parameter">a function that returns the parameter</param>
+        public FloatUniform(ShaderTarget ShaderTarget, string Name, Func<float> get_parameter) : base(ShaderTarget, Name) => parameter = new DeepCopy<float>(get_parameter);
+        /// <summary>
         /// updates the value in openGl
         /// </summary>
-        public override void OnUpdateUniform() => GL.Uniform1(location, parameter.Value);
+        public override void OnUpdateUniform() => GL.Uniform1(location, (float)parameter.Value);
         /// <summary>
         /// Generates vertex definition for this object
         /// </summary>
@@ -214,8 +223,10 @@ namespace Shaders
     class IntUniform : UniformParameter
     {
         DeepCopy<int> parameter = new DeepCopy<int>();
+
         public IntUniform(ShaderTarget ShaderTarget, string Name, DeepCopy<int> Parameter) : base(ShaderTarget, Name) => parameter = Parameter;
         public IntUniform(ShaderTarget ShaderTarget, string Name) : base(ShaderTarget, Name) { }
+        public IntUniform(ShaderTarget ShaderTarget, string Name, Func<int> get_parameter) : base(ShaderTarget, Name) => parameter = new DeepCopy<int>(get_parameter);
         public override void OnUpdateUniform() => GL.Uniform1(location, parameter.Value);
         public override string VertDefinition(ref int Location) => GenericVertDef<int>(ref Location);
         public override string FragDefinition(ref int Location) => GenericFragDef<int>(ref Location);
@@ -226,6 +237,7 @@ namespace Shaders
         DeepCopy<Vector2> parameter = new DeepCopy<Vector2>();
         public Vec2Uniform(ShaderTarget ShaderTarget, string Name, DeepCopy<Vector2> Parameter) : base(ShaderTarget, Name) => parameter = Parameter;
         public Vec2Uniform(ShaderTarget ShaderTarget, string Name) : base(ShaderTarget, Name) { }
+        public Vec2Uniform(ShaderTarget ShaderTarget, string Name, Func<Vector2> get_parameter) : base(ShaderTarget, Name) => parameter = new DeepCopy<Vector2>(get_parameter);
         public override void OnUpdateUniform() => GL.Uniform2(location, parameter.Value);
         public override string VertDefinition(ref int Location) => GenericVertDef<Vector2>(ref Location);
         public override string FragDefinition(ref int Location) => GenericFragDef<Vector2>(ref Location);
@@ -236,6 +248,7 @@ namespace Shaders
         DeepCopy<Vector3> parameter = new DeepCopy<Vector3>();
         public Vec3Uniform(ShaderTarget ShaderTarget, string Name, DeepCopy<Vector3> Parameter) : base(ShaderTarget, Name) => parameter = Parameter;
         public Vec3Uniform(ShaderTarget ShaderTarget, string Name) : base(ShaderTarget, Name) { }
+        public Vec3Uniform(ShaderTarget ShaderTarget, string Name, Func<Vector3> get_parameter) : base(ShaderTarget, Name) => parameter = new DeepCopy<Vector3>(get_parameter);
         public override void OnUpdateUniform() => GL.Uniform3(location, parameter.Value);
         public override string VertDefinition(ref int Location) => GenericVertDef<Vector3>(ref Location);
         public override string FragDefinition(ref int Location) => GenericFragDef<Vector3>(ref Location);
@@ -246,6 +259,7 @@ namespace Shaders
         DeepCopy<Vector4> parameter = new DeepCopy<Vector4>();
         public Vec4Uniform(ShaderTarget ShaderTarget, string Name, DeepCopy<Vector4> Parameter) : base(ShaderTarget, Name) => parameter = Parameter;
         public Vec4Uniform(ShaderTarget ShaderTarget, string Name) : base(ShaderTarget, Name) { }
+        public Vec4Uniform(ShaderTarget ShaderTarget, string Name, Func<Vector4> get_parameter) : base(ShaderTarget, Name) => parameter = new DeepCopy<Vector4>(get_parameter);
         public override void OnUpdateUniform() => GL.Uniform4(location, parameter.Value);
         public override string VertDefinition(ref int Location) => GenericVertDef<Vector4>(ref Location);
         public override string FragDefinition(ref int Location) => GenericFragDef<Vector4>(ref Location);
@@ -256,6 +270,7 @@ namespace Shaders
         DeepCopy<Matrix2> parameter = new DeepCopy<Matrix2>();
         public Mat2Uniform(ShaderTarget ShaderTarget, string Name, DeepCopy<Matrix2> Parameter) : base(ShaderTarget, Name) => parameter = Parameter;
         public Mat2Uniform(ShaderTarget ShaderTarget, string Name) : base(ShaderTarget, Name) { }
+        public Mat2Uniform(ShaderTarget ShaderTarget, string Name, Func<Matrix2> get_parameter) : base(ShaderTarget, Name) => parameter = new DeepCopy<Matrix2>(get_parameter);
         public override void OnUpdateUniform()
         {
             Matrix2 M = parameter.Value;
@@ -271,6 +286,7 @@ namespace Shaders
         DeepCopy<Matrix3> parameter = new DeepCopy<Matrix3>();
         public Mat3Uniform(ShaderTarget ShaderTarget, string Name, DeepCopy<Matrix3> Parameter) : base(ShaderTarget, Name) => parameter = Parameter;
         public Mat3Uniform(ShaderTarget ShaderTarget, string Name) : base(ShaderTarget, Name) { }
+        public Mat3Uniform(ShaderTarget ShaderTarget, string Name, Func<Matrix3> get_parameter) : base(ShaderTarget, Name) => parameter = new DeepCopy<Matrix3>(get_parameter);
         public override void OnUpdateUniform()
         {
             Matrix3 M = parameter.Value;
@@ -287,6 +303,7 @@ namespace Shaders
         DeepCopy<Matrix4> parameter = new DeepCopy<Matrix4>();
         public Mat4Uniform(ShaderTarget ShaderTarget, string Name, DeepCopy<Matrix4> Parameter) : base(ShaderTarget, Name) => parameter = Parameter;
         public Mat4Uniform(ShaderTarget ShaderTarget, string Name) : base(ShaderTarget, Name) { }
+        public Mat4Uniform(ShaderTarget ShaderTarget, string Name, Func<Matrix4> get_parameter) : base(ShaderTarget, Name) => parameter = new DeepCopy<Matrix4>(get_parameter);
         public override void OnUpdateUniform()
         {
             Matrix4 M = parameter.Value;
@@ -300,27 +317,28 @@ namespace Shaders
     class TextureUniform : UniformParameter
     {
         private DeepCopy<int> parameter;
-        public int unit;
 
         public TextureUniform(ShaderTarget ShaderTarget, string Name, DeepCopy<int> Texture) : base(ShaderTarget, Name) => parameter = Texture;
         public override void OnUpdateUniform()
         {
-            //
-            GL.ActiveTexture((TextureUnit)unit);
+            int unit = TextureManager.TexturesLoaded++;
             GL.BindTextureUnit(unit, parameter.Value);
+
+            GL.ActiveTexture((TextureUnit)unit);
             GL.Uniform1(location, (int)unit);
         }
         public override string VertDefinition(ref int Location)
         {
-            throw new Exception("No textures in vertex shader");
-            //if (shadertarget == ShaderTarget.Fragment) return "";
-            //return $"uniform sampler2D {name};{Environment.NewLine}";
+            location = Location++;
+            if (shadertarget == ShaderTarget.Fragment) return "";
+            return $"layout(location = {location}) uniform sampler2D {name};{Environment.NewLine}";
         }
-        public override string FragDefinition(ref int location)
+        public override string FragDefinition(ref int Location)
         {
-            this.location = location;
             if (shadertarget == ShaderTarget.Vertex) return "";
-            return $"layout(location = {location++}) uniform sampler2D {name};{Environment.NewLine}";
+            //if (shadertarget == ShaderTarget.Both) return $"layout(location = {this.location}) uniform sampler2D {name};{Environment.NewLine}";
+            location = Location;
+            return $"layout(location = {Location++}) uniform sampler2D {name};{Environment.NewLine}";
         }
         public override void SetUniform(IDeepCopy DeepCopy) => throw new Exception("Currently can't set texture this way.");
     }

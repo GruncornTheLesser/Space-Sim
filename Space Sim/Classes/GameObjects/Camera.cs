@@ -29,13 +29,17 @@ namespace GameObjects
         private float ZoomIndex; // speed of zooming
         private int zoomID;
 
-        public readonly float windowunit;
-        public Vector2 windowsize;
-
         private readonly int zoomtime;
         private readonly float zoomrate;
 
-        public MouseButton MovementButton = MouseButton.Button1;
+        public readonly float windowunit;
+        public Vector2 windowsize;
+
+
+
+        public MouseButton MovementButton = MouseButton.Button3;
+
+        public Matrix3 BaseMatrix;
 
         /// <summary>
         /// returns matrix for transforming between window view in pixels for renderobjects fixed to screen
@@ -89,6 +93,10 @@ namespace GameObjects
             zoomtime = ZoomTime;
 
             basescale = Scale;
+            
+            float M = MathF.Min(WindowSize.X, WindowSize.Y);
+            Vector2 Normalized = new Vector2(M / WindowSize.X, M / WindowSize.Y);
+            BaseMatrix = new Matrix3(Normalized.X, 0, 0, 0, Normalized.Y, 0, 0, 0, 1);
         }
 
         public void AttachEvents()
@@ -164,6 +172,10 @@ namespace GameObjects
         {
             windowsize = WindowSize;
             basescale = new Vector2(zoom / WindowSize.X / windowunit, zoom / WindowSize.Y / windowunit);
+            
+            float M = MathF.Min(WindowSize.X, WindowSize.Y);
+            Vector2 Normalized = new Vector2(M / WindowSize.X, M / WindowSize.Y);
+            BaseMatrix = new Matrix3(Normalized.X, 0, 0, 0, Normalized.Y, 0, 0, 0, 1);
         }
 
         /// <summary>

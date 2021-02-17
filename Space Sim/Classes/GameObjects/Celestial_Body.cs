@@ -8,20 +8,6 @@ using DeepCopy;
 
 namespace GameObjects
 {
-    enum PlanetType
-    {
-        Sun,
-        Mercury,
-        Venus,
-        Earth,
-        Mars,
-        Jupiter,
-        Saturn,
-        Uranus,
-        Neptune,
-        Random
-    }
-
     class Celestial_Body : RenderObject2D
     {
         public readonly float Mass;
@@ -39,25 +25,26 @@ namespace GameObjects
                 RotMat = Matrix3.CreateRotationX(Rot.X) * Matrix3.CreateRotationZ(Rot.Z) * Matrix3.CreateRotationY(Rot.Y); // want to rotate Y first
             }
         }
-        public bool Adaptive_lighting = false; // used for sun
+        public bool Adaptive_lighting = true; // used for sun
 
         private Vector3 Rot;
         private Matrix3 RotMat;
         
 
-        public Celestial_Body(Vector2 Scale, Vector2 Position, string Texture) : base(Window.SquareMesh, "Default", "Planet")
+        public Celestial_Body(Vector2 Scale, Vector2 Position, string Texture_Path) : base(Window.SquareMesh, "Default", "Planet")
         {
             this.Scale = Scale;
             this.Position = Position;
             Z_index = 2;
 
-            TextureHandle = Init_Textures(Texture);
+            TextureHandle = TextureManager.Get(Texture_Path);
             // default 2d shader parameters
-            ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "transform", TransformCopy));
-            ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "camera", Window.CameraCopy));
-            ShaderProgram.AddUniform(new FloatUniform(ShaderTarget.Both, "Time", EventManager.TimeCopy));
+            ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "transform", new DeepCopy<Matrix3>(() => Transform_Matrix)));
+            ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "camera", Window.Get_CamMat));
+            ShaderProgram.AddUniform(new FloatUniform(ShaderTarget.Both, "Time", EventManager.Get_Time));
 
             PlanetRotation = new Vector3(0, 1, 0.3926875f);
+            
             // planet shader parameters
             ShaderProgram.AddUniform(new TextureUniform(ShaderTarget.Fragment, "Texture", new DeepCopy<int>(() => TextureHandle)));
             ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Both, "XZrotmat3D", new DeepCopy<Matrix3>(() => RotMat)));
@@ -69,7 +56,7 @@ namespace GameObjects
 
         public override void OnProcess(float delta)
         {
-            //Position = new Vector2(MathF.Sin(EventManager.Time), -MathF.Cos(EventManager.Time)) * 200000;
+            Position = new Vector2(MathF.Sin(EventManager.Time), -MathF.Cos(EventManager.Time)) * 200;
             PlanetRotation = new Vector3(0.0f, 1.0f * EventManager.Time, 0.3926875f);
         }
     

@@ -61,6 +61,15 @@
     <None Update="Textures\512 planet textures\earth.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Textures\Button textures\Button_resize.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Textures\Button textures\Button_Slider.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Textures\Button textures\Button_SliderScale.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Textures\Button textures\Button_home.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

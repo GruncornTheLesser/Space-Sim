@@ -101,7 +101,6 @@ namespace Shaders
 
             if (NewUniform.GetType() == typeof(TextureUniform))
             {
-                ((TextureUniform)NewUniform).unit = UniformTextures.Count;
                 UniformTextures[NewUniform.name] = (TextureUniform)NewUniform;
             }
             else
@@ -141,9 +140,7 @@ namespace Shaders
         {
             GL.PolygonMode(MaterialFace, PolygonMode); // use this programs rendering modes
             GL.UseProgram(ProgramHandle); // tell openGL to use this object
-            UpdateUniforms();
-            foreach (string name in UniformParameters.Keys) UniformParameters[name].OnUpdateUniform(); // update the uniforms in the shader
-            foreach (string name in UniformTextures.Keys) UniformTextures[name].OnUpdateUniform();
+            UpdateUniforms();// update the uniforms in the shaders
             
         }
 
@@ -170,7 +167,13 @@ namespace Shaders
 
             // check for error linking shaders to program
             string info = GL.GetProgramInfoLog(ProgramHandle);
-            if (!string.IsNullOrWhiteSpace(info)) throw new Exception($"Failed to link shaders to program: {info}");
+            if (!string.IsNullOrWhiteSpace(info)) 
+                throw new Exception($"Failed to link shaders to program: {info}" +
+                $"{Environment.NewLine}+--------------------------------+{Environment.NewLine}" +
+                $"{Load_Code(ShaderType.VertexShader, @"Shaders\" + vertpath + "Vert.shader")}" +
+                $"{Environment.NewLine}+--------------------------------+{Environment.NewLine}" +
+                $"{Load_Code(ShaderType.FragmentShader, @"Shaders\" + fragpath + "Frag.shader")}" +
+                $"{Environment.NewLine}+--------------------------------+{Environment.NewLine}");
 
             // detach and delete both shaders
             GL.DetachShader(ProgramHandle, Vert);
@@ -225,6 +228,7 @@ namespace Shaders
                 // generate vertex defintions
                 foreach (IVertexParameter P in VertexParameters) code += P.VertDefinition(ref location);
                 // generate uniform definitions
+                foreach (string name in UniformTextures.Keys) code += UniformTextures[name].VertDefinition(ref location);
                 foreach (string name in UniformParameters.Keys) code += UniformParameters[name].VertDefinition(ref location);
                 
                 //foreach (string name in UniformTextures.Keys) code += UniformTextures[name].VertDefinition(ref location);
@@ -232,8 +236,9 @@ namespace Shaders
             else
             {
                 // generate uniform definitions
-                foreach (string name in UniformParameters.Keys) code += UniformParameters[name].FragDefinition(ref location);
                 foreach (string name in UniformTextures.Keys) code += UniformTextures[name].FragDefinition(ref location);
+                foreach (string name in UniformParameters.Keys) code += UniformParameters[name].FragDefinition(ref location);
+                
                 // only uniform parameters can go into the fragments shader
             }
 
