@@ -6,7 +6,7 @@ using System.Text;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using System.Collections;
-using DeepCopy;
+using Graphics;
 
 namespace Shaders
 {
@@ -14,21 +14,15 @@ namespace Shaders
     {
         // the handle in openGl for this program
         private int ProgramHandle;
-        
-        // file paths
-        private string vertpath;
-        private string fragpath;
 
-        // collections for parameters
+        #region Collections For Parameters
         private Dictionary<string, UniformParameter> UniformParameters = new Dictionary<string, UniformParameter>(); // only uniform parameters need to be accessible
         private Dictionary<string, TextureUniform> UniformTextures = new Dictionary<string, TextureUniform>();
         private List<IVertexParameter> VertexParameters = new List<IVertexParameter>();
-        
-        // the rendering fill modes
-        public PolygonMode PolygonMode = PolygonMode.Fill;
-        public MaterialFace MaterialFace = MaterialFace.FrontAndBack;
+        #endregion
+
         /// <summary>
-        /// Get uniform parameter. used for setting uniform after program has been compliled.
+        /// used to setting uniform after program has been compliled.
         /// </summary>
         /// <param name="Name">The name of the parameter.</param>
         /// <returns></returns>
@@ -38,14 +32,20 @@ namespace Shaders
             {
                 if (UniformParameters.ContainsKey(Name)) return UniformParameters[Name];
                 else if (UniformTextures.ContainsKey(Name)) return UniformTextures[Name];
-                else return null;
+                else throw new Exception($"{Name} uniform not found");
             }
             set
             {
-                RemoveUniform(Name);
-                AddUniform(value);
+                if (UniformParameters.ContainsKey(Name))
+                {
+                    RemoveUniform(Name);
+                    AddUniform(value);
+                }
             }
         }
+
+        #region file paths
+        // file paths
 
         /// <summary>
         /// Sets vertex shader path. This means the shader can be changed at run time. requires program to recompile.
@@ -62,6 +62,7 @@ namespace Shaders
                 return vertpath;
             }
         }
+        private string vertpath;
         /// <summary>
         /// Sets fragment shader path. This means the shader can be changed at run time. requires program to recompile.
         /// </summary>
@@ -77,9 +78,10 @@ namespace Shaders
                 return vertpath;
             }
         }
+        private string fragpath;
+        #endregion
 
         public bool ready = false; // = "do the fields in this object match whats been compiled in openGL?"
-
         public Action UpdateUniforms = () => { };
 
         public ShaderProgram(string VertexPath, string FragmentPath)
@@ -88,6 +90,7 @@ namespace Shaders
             fragpath = FragmentPath;
         }
 
+        #region Adding and Removing Parameters
         /// <summary>
         /// adds a uniform parameter
         /// </summary>
@@ -96,20 +99,20 @@ namespace Shaders
         {
             // if parameter exists with this name already exists throw exception
             if (UniformParameters.ContainsKey(NewUniform.name)) throw new Exception($"the name {NewUniform.name} is already taken on this shader program");
-            ready = false; // fields no longer match whats compiled 
             UpdateUniforms += NewUniform.OnUpdateUniform;
 
             if (NewUniform.GetType() == typeof(TextureUniform))
             {
+                // add to textures 
                 UniformTextures[NewUniform.name] = (TextureUniform)NewUniform;
             }
             else
             {
+                // add to parameters
                 UniformParameters[NewUniform.name] = NewUniform;
             }
 
-
-            
+            ready = false; // fields no longer match whats compiled 
         }
         
         /// <summary>
@@ -132,18 +135,9 @@ namespace Shaders
             ready = false; // fields no longer match whats compiled 
             VertexParameters.Add(NewVertexParameter);
         }
+        #endregion
 
-        /// <summary>
-        /// uses current program to render next object.
-        /// </summary>
-        public void UseProgram()
-        {
-            GL.PolygonMode(MaterialFace, PolygonMode); // use this programs rendering modes
-            GL.UseProgram(ProgramHandle); // tell openGL to use this object
-            UpdateUniforms();// update the uniforms in the shaders
-            
-        }
-
+        #region Compilation and loading of shaders
         /// <summary>
         /// Compiles together the shaders to make the program. if any fields are changed after being compiled(not including updating uniforms) the program will need to be recompiled to see the changes.
         /// </summary>
@@ -245,6 +239,17 @@ namespace Shaders
             // read file and add text to code
             code += File.ReadAllText(path);
             return code;
+        }
+        #endregion
+
+        /// <summary>
+        /// uses this program to render next object.
+        /// </summary>
+        public void UseProgram()
+        {
+            TextureManager.TexturesLoaded = 0;
+            GL.UseProgram(ProgramHandle); // tell openGL to use this object
+            UpdateUniforms();// update the uniforms in the shaders
         }
     }
 }

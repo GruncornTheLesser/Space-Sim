@@ -1,21 +1,18 @@
 ﻿using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using System;
-using Graphics;
 using System.Threading.Tasks;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 
-namespace GameObjects
+namespace Graphics
 {
 
     /* THING TO DO:
-     * have not implemented the movement while zooming. ie zoom to location - dont know if user wants this.
-     * Specific Button for movement and controls -> not difficult less convenient right now
+     * have not implemented the movement while zooming. ie zoom to location - dont know if user wants this. -> they dont care.
      */
 
-    sealed class Camera2D : Node2D
+    sealed class Camera2D : Transform
     {
-
         /* ZoomID is the last ID of the change in zoom.
          * The only reason for it not to match is if a newer call exists.
          * 
@@ -81,7 +78,12 @@ namespace GameObjects
         /// <param name="ZoomRate">The rate at which the camera scales during zoom.</param>
         public Camera2D(Vector2 WindowSize, float WindowUnit, int ZoomTime, float ZoomRate) : base(0, 1f / WindowSize.X / WindowUnit, (1f / WindowSize.Y / WindowUnit) * (WindowSize.Y / WindowSize.X), 0, 0)
         {
-            AttachEvents();
+            EventManager.MouseDown += OnMouseDown;
+            EventManager.MouseUp += OnMouseUp;
+            EventManager.MouseWheel += OnMouseWheel;
+            EventManager.MouseMove += OnMouseMove;
+            EventManager.System_Process += OnSystemProcess;
+            EventManager.WindowResize += OnUpdateWindowSize;
 
             zoomID = 0;
             this.ZoomIndex = 0;
@@ -99,14 +101,6 @@ namespace GameObjects
             BaseMatrix = new Matrix3(Normalized.X, 0, 0, 0, Normalized.Y, 0, 0, 0, 1);
         }
 
-        public void AttachEvents()
-        {
-            EventManager.MouseDown += OnMouseDown;
-            EventManager.MouseUp += OnMouseUp;
-            EventManager.MouseWheel += OnMouseWheel;
-            EventManager.MouseMove += OnMouseMove;
-            EventManager.Process += OnProcess;
-        }
 
         /// <summary>
         /// Sets "zoomrate" to 0 if object ZoomID matches the last time "ZoomTo" was called.
@@ -168,7 +162,7 @@ namespace GameObjects
         /// Changes the camera matrix to reflect the new window size.
         /// </summary>
         /// <param name="WindowSize">New window size.</param>
-        public void UpdateWindowSize(Vector2 WindowSize)
+        public void OnUpdateWindowSize(Vector2 WindowSize)
         {
             windowsize = WindowSize;
             basescale = new Vector2(zoom / WindowSize.X / windowunit, zoom / WindowSize.Y / windowunit);
@@ -182,7 +176,7 @@ namespace GameObjects
         /// Called on each frame update.
         /// </summary>
         /// <param name="delta">time passed since last processed.</param>
-        public void OnProcess(float delta) => Zoom *= MathF.Pow(MathF.Pow(zoomrate, ZoomIndex), delta); // decrease by zoomrate in zoomtime
+        public void OnSystemProcess(float delta) => Zoom *= MathF.Pow(MathF.Pow(zoomrate, ZoomIndex), delta); // decrease by zoomrate in zoomtime
 
 
 

@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace DeepCopy
+namespace Shaders
 {
     // I'm using deep copies to replace value pointers.
-    // Ive set up the deep copies using delegates/Func/Action which are to my understanding function pointers
+    // Ive set up the deep copies using delegates Func/Action for get/set
 
     /// <summary>
     /// A deepCopy interface for passing into functions

@@ -1,11 +1,8 @@
-﻿using DeepCopy;
-using Graphics;
+﻿using System;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.GraphicsLibraryFramework;
+using Graphics;
 using Shaders;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace GameObjects
 {
@@ -13,60 +10,70 @@ namespace GameObjects
      * Button Dont Work on window rescale
      * create button parent class
      */
-    class PressButton : RenderObject2D
+    sealed class PressButton : RenderObject2D
     {
         public Action Down;
         public Action Release;
 
-        protected ClickBox clickbox;
-        private int PressedTexture;
-        private int UnPressedTexture;
-        private int BorderTexture;
-        private int InsideTexture;
+        private ClickBox clickbox;
 
-        public PressButton(Vector2 Position, Vector2 Scale, string Button) : base(Window.SquareMesh, "Default", "PressButton")
+        private string PressedTexture;
+        private string UnPressedTexture;
+        private string BorderTexture;
+        private string InsideTexture;
+
+        public PressButton(Vector2 Position, Vector2 Scale, string Button) : base(SquareMesh, "Default", "PressButton")
         {
-            InsideTexture = TextureManager.Get("Textures/Button textures/" + Button + ".png");
-            PressedTexture = TextureManager.Get("Textures/Button textures/Button_Pressed.png");
-            UnPressedTexture = TextureManager.Get("Textures/Button textures/Button_UnPressed.png");
+            // create textures
+            InsideTexture = "Textures/Button textures/" + Button + ".png";
+            PressedTexture = "Textures/Button textures/Button_Pressed.png";
+            UnPressedTexture = "Textures/Button textures/Button_UnPressed.png";
 
             BorderTexture = UnPressedTexture;
 
+            // pass in default shader parameters
             ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "transform", () => Transform_Matrix));
-            ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "camera", Window.Get_CamMat)); // gets replaced when fixed to screen
-            ShaderProgram.AddUniform(new FloatUniform(ShaderTarget.Both, "Time", EventManager.Get_Time));
+            ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "camera", () => RenderWindow.Camera.BaseMatrix)); // gets replaced when fixed to screen
+            ShaderProgram.AddUniform(new FloatUniform(ShaderTarget.Both, "Time", () => EventManager.Program_Time));
 
-            ShaderProgram.AddUniform(new TextureUniform(ShaderTarget.Fragment, "BorderTexture", new DeepCopy<int>(() => BorderTexture)));
-            ShaderProgram.AddUniform(new TextureUniform(ShaderTarget.Fragment, "InsideTexture", new DeepCopy<int>(() => InsideTexture)));
-
-
+            // pass in specific shader parameters
+            ShaderProgram.AddUniform(new TextureUniform(ShaderTarget.Fragment, "BorderTexture", new DeepCopy<int>(() => TextureManager.Get(BorderTexture))));
+            ShaderProgram.AddUniform(new TextureUniform(ShaderTarget.Fragment, "InsideTexture", new DeepCopy<int>(() => TextureManager.Get(InsideTexture))));
+            
+            // compile shaders
             ShaderProgram.CompileProgram();
 
-            Z_index = 3;
+            // so it appears in front.
+            Z_index = 5;
+            // so it isnt moved by camera
+            FixToScreen = true;
 
+            // set transform
             this.Position = Position;
             this.Scale = Scale;
 
-            FixToScreen = true;
-
-            Down = () => { };
-            Release = () => { };
-
+            // initiate clickbox
             clickbox = new ClickBox(new Vector2[] { new Vector2(-0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, -0.5f), new Vector2(-0.5f, -0.5f) }, MouseButton.Button1, true, () => Transform_Matrix);
+            
+            Down = () => { }; // do nothing by default can be changed in derived class or outside object
+            Release = () => { };
+            
+            clickbox.Click += OnClick; // set texture and call Down/release
+            clickbox.UnClick += OnUnClick;
 
-            clickbox.Click += () =>
-            {
-                BorderTexture = PressedTexture;
-                Down();
-            };
-            clickbox.UnClick += () =>
-            {
-                BorderTexture = UnPressedTexture;
-                Release();
-            };
+
+
 
         }
-        public override void OnProcess(float delta) { }
-
+        private void OnClick()
+        {
+            BorderTexture = PressedTexture;
+            Down();
+        }
+        private void OnUnClick()
+        {
+            BorderTexture = UnPressedTexture;
+            Release();
+        }
     }
 }

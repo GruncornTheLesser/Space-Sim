@@ -7,8 +7,11 @@ namespace Graphics
 {
     static class TextureManager
     {
+        /// <summary>
+        /// Textures loaded for passing to GPU. Each time A renderObject renders this is set to 0 and the new textures are loaded in.
+        /// This is used to identify the correct texture unit to load into.
+        /// </summary>
         public static int TexturesLoaded = 0;
-
 
         private static Dictionary<string, int> _TextureDict = new Dictionary<string, int>();
         public static int Get(string path)

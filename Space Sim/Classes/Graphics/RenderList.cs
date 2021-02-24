@@ -1,93 +1,113 @@
 ﻿using System;
-using System.Collections.ObjectModel;
 using System.Collections.Generic;
-using System.Text;
-using Graphics;
 using System.Collections;
-using OpenTK.Mathematics;
 using System.Linq;
-using DeepCopy;
+
 namespace Graphics
 {
     /* THING TO DO:
-     * Could Make it a deepcopy so it can be changed in the window class -> requires a constructor with no parameters for a default value
+     * I have been a fool.
      */
 
     /// <summary>
-    /// Sorts Render Objects by Z index
+    /// the list of objects that get rendered. The order of render is determined by the objects z index.
     /// </summary>
-    /// <typeparam name="Vertex"></typeparam>
     class RenderList : IEnumerable<RenderObject2D>
     {
-        private List<string> _List = new List<string>(); // list of keys
-        private Dictionary<string, Func<RenderObject2D>> _Dict = new Dictionary<string, Func<RenderObject2D>>(); // hash table for key to the render object get function
-        private int Min
-        {
-            get
-            {
-                if (Count > 0) return _List.Min(Key => _Dict[Key]().Z_index);
-                else return int.MaxValue;
-            }
-        }
-        private int Max
-        {
-            get
-            {
-                if (Count > 0) return _List.Max(Key => _Dict[Key]().Z_index);
-                else return int.MinValue;
-            }
-        }
-        public int Count => _List.Count;
+        private static List<RenderObject2D> ObjectPool = new List<RenderObject2D>();
+        public static int Count => ObjectPool.Count;
 
-        public RenderList() { }
-        public void Add(string Key, Func<RenderObject2D> get_item)
+        // adds object to render list.
+        public static void Add(RenderObject2D item)
         {
-            get_item().Set_Z_Index += Update_Index;
-            _Dict.Add(Key, get_item);
+            ObjectPool.Add(item);
+            item.Set_Z_Index += QuickSort;
+            QuickSort(item.Z_index);
+            
+            Display();
 
-            if (Min >= get_item().Z_index) // if less than smallest
-            {
-                _List.Insert(0, Key); // add to start
-            }
-            else if (Max <= get_item().Z_index) // if greater than biggest
-            {
-                _List.Add(Key); // add to end
-            }
-            else
-            {
-                // binary search for where to add new object
-                int tail = 0;
-                int head = Count - 1;
-                
-                // while there are indexes between head and tail
-                while (head - tail > 1)
-                {
-                    int Mid = (head + tail) / 2;
-                    if (get_item().Z_index > _Dict[_List[Mid]]().Z_index)
-                    {
-                        tail = Mid;
-                    }
-                    else
-                    {
-                        head = Mid;
-                    }
-                }
-                _List.Insert(++tail, Key);
-            }
         }
+        // removes object from render list.
+        public static void Remove(RenderObject2D item)
+        {
+            item.Set_Z_Index -= QuickSort;
+            ObjectPool.Remove(item);
+            Display();
+        }
+
+        #region QuickSort
+        /// <summary>
+        /// used for Z index changed calls
+        /// </summary>
+        /// <param name="NewZ"></param>
+        private static void QuickSort(int NewZ) => QuickSort(0, Count);
 
         /// <summary>
-        /// When Z index is updated, one object will be out of place so this can loop through and reposition it.
+        /// quick sort with last index's value as pivot.
         /// </summary>
-        private void Update_Index(int value) => _List = _List.OrderBy(Key => _Dict[Key]().Z_index).ToList(); // re-sort using Z index
-        
+        /// <param name="Left">The left bound index(inclusive)</param>
+        /// <param name="Right">The right bound (exclusive)</param>
+        private static void QuickSort(int Left, int Right)
+        {
+            if (Left >= Right) return;
+            else 
+            {
+                // if Left < Right
+                int P = QuickSortPartition(Left, Right); // finds partitions
+                QuickSort(Left, P - 1); // sorts each partition
+                QuickSort(P + 1, Right);
 
+            }
+        }
+        /// <summary>
+        /// moves all the values less than the pivot before and vice versa. 
+        /// </summary>
+        /// <param name="Left">The left bound index(inclusive).</param>
+        /// <param name="Right">The right bound (exclusive).</param>
+        /// <param name="Pivot">The value its being reorganised with.</param>
+        /// <returns></returns>
+        private static int QuickSortPartition(int Left, int Right)
+        {
+            int Pivot = ObjectPool[Left].Z_index;
+            int i = Left + 1; // runs left to right
+            int j = Right; // runs right to left
+            while (true)
+            {
+                while (i < Right && ObjectPool[i++].Z_index < Pivot); // Adds to left pointer until value less than pivot
+                while (ObjectPool[--j].Z_index > Pivot); // subtracts from right pointer until value less than pivot
+
+                if (i >= j) break; // if pointers havent passed each other
+                else swap(i++, j--); // swap the values that it got stuck on
+            }
+            swap(j, Left); // swap j index with Pivot index(Left)
+            return j;
+        }
+        // Swaps value at index a with value at index b
+        private static void swap(int a, int b)
+        {
+            RenderObject2D tempb = ObjectPool[a];
+            ObjectPool[a] = ObjectPool[b];
+            ObjectPool[b] = tempb;
+        }
+        /// <summary>
+        /// Creates array for testing. 
+        /// </summary>
+        public static void Display()
+        {
+            int[] arr = new int[Count];
+            for (int i = 0; i < Count; i++) arr[i] = ObjectPool[i].Z_index;
+        }
+        #endregion
+
+        #region Enumerators
         public IEnumerator<RenderObject2D> GetEnumerator()
         {
             // 'yield return' returns the data in packets whereas 'return' returns it as one packet
-            foreach(string Key in _List) yield return _Dict[Key]();
+            foreach(RenderObject2D Object in ObjectPool) yield return Object;
+            // IEnumerator requires an instance of the object so must do 'RO in new RenderList()'
         }
 
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => ObjectPool.GetEnumerator();
+        #endregion
     }
 }

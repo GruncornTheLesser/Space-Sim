@@ -1,7 +1,6 @@
 ﻿using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using System;
-using DeepCopy;
 using Graphics;
 
 namespace Shaders
@@ -9,7 +8,7 @@ namespace Shaders
 
 
     /* THING TO DO:
-     * 
+     * Make texture Uniform a string instead of an int. -> ready for future optimisations of Texture Manager
      */
 
     /// <summary>
@@ -87,11 +86,14 @@ namespace Shaders
             }
         }
     }
-    
+
     /// <summary>
     /// A parameter to pass to shader thats equal for all vertices. uses a deep copy so the value updates here.
     /// </summary>
     /// <typeparam name="T"></typeparam>
+
+
+    #region Uniform Parameters
     abstract class UniformParameter
     {
         public readonly string name; // the name in the script
@@ -159,7 +161,7 @@ namespace Shaders
             if (shadertarget == ShaderTarget.Vertex) return "";
             // both needs to read the location made in the vertex definition
             if (shadertarget == ShaderTarget.Both) return $"layout(location = {this.location}) uniform {TypeToGLSL<T>()} {name};{Environment.NewLine}";
-            
+
             // else if only fragment 
             this.location = Location;
             return $"layout(location = {Location++}) uniform {TypeToGLSL<T>()} {name};{Environment.NewLine}";
@@ -173,7 +175,6 @@ namespace Shaders
         public abstract string FragDefinition(ref int Location);
         public abstract void SetUniform(IDeepCopy DeepCopy);
     }
-
     class FloatUniform : UniformParameter
     {
         DeepCopy<float> parameter = new DeepCopy<float>(); // default local value inside Deepcopy
@@ -342,4 +343,5 @@ namespace Shaders
         }
         public override void SetUniform(IDeepCopy DeepCopy) => throw new Exception("Currently can't set texture this way.");
     }
+    #endregion
 }

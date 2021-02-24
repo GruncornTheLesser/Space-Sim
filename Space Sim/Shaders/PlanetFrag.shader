@@ -19,11 +19,11 @@ void main(void)
 	else 
 	{
 		vec3 normal = vec3(uv.x, uv.y, sqrt(1.0 - uv.x * uv.x - uv.y * uv.y)); // normal to hemisphere
-		vec3 rotnorm = normal * XZrotmat3D; // rotated normal
+		vec3 rotnorm = normal * rotmat3D; // rotated normal
 		// map texture to sphere + rotate Y to rotate and wrap around
 		vec2 TexCoords = vec2(0.5 + atan(rotnorm.z, rotnorm.x) / (2.0 * pi), 0.5 - asin(rotnorm.y) / pi);
 		// dot product normal and light direction * texture colour
-		Colour = vec4(vec3(max(0.0, dot(normal, normalize(light_dir)))) * texture(Texture, TexCoords).xyz, 1.0);
+		Colour = vec4(vec3(max(dark, dot(normal, normalize(lightDir)))) * texture(Texture, TexCoords).xyz, 1.0);
 	}
 	
 	

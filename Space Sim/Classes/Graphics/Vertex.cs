@@ -36,4 +36,24 @@ namespace Graphics
         }
     }
 
+    public struct LineVertex
+    {
+        public static int SizeInBytes
+        {
+            get => Vector2.SizeInBytes + Vector4.SizeInBytes; // 24 Bytes
+        }
+        public Vector2 VertUV; // 2 floats = 8 bytes
+        public Color4 VertColour; // 4 floats = 16 bytes
+        public LineVertex(Vector2 Position, Color4 Colour)
+        {
+            this.VertUV = Position;
+            this.VertColour = Colour;
+
+        }
+        public LineVertex(float PositionX, float PositionY, float R, float G, float B, float A)
+        {
+            this.VertUV = new Vector2(PositionX, PositionY);
+            this.VertColour = new Color4(R, G, B, A);
+        }
+    }
 }
