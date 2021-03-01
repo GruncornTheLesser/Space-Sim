@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Graphics;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
-using Shaders;
+using Graphics.Shaders;
 
 namespace GameObjects
 {
@@ -19,10 +19,10 @@ namespace GameObjects
     {
         private Queue<Vertex2D> VerticeQueue;
         private Func<Vertex2D> GetVertex;
-        private readonly int UpdateTime = 100;
+        private readonly int UpdateTime;
 
         /// <summary>
-        /// Constructs a trail
+        /// Constructs a trail which follows a transform
         /// </summary>
         /// <param name="Capacity">the number of vertices this object uses. Higher capacity makes longer lines.</param>
         /// <param name="UpdateTime">the number of milliseconds between position updates. Smaller update times increases smoothness. 0 processes every frame.</param>
@@ -70,6 +70,12 @@ namespace GameObjects
 
             EventManager.Program_Process -= UpdateQueueLoop; // remove from regular update
             Task.Delay(UpdateTime).ContinueWith(ID => EventManager.Program_Process += UpdateQueueLoop); // wait Update Time the add Update queue back to Process
+        }
+        
+        public void Stop()
+        {
+            if (UpdateTime == 0) EventManager.Program_Process -= UpdateQueueImmediate;
+            else EventManager.Program_Process -= UpdateQueueLoop;
         }
     }
 }

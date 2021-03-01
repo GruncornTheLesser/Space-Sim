@@ -1,7 +1,9 @@
 ﻿using System;
 using OpenTK.Mathematics;
 using OpenTK.Graphics.OpenGL4;
-using Shaders;
+using Graphics.Shaders;
+using System.Reflection;
+using System.Runtime.Remoting;
 
 /* OpenGL Hardware Pipeline
 * ====================CPU====================
@@ -180,8 +182,6 @@ namespace Graphics
             };
             Visible = true;
 
-            RenderList.Add(this);            
-
             // initiate the shader program with the file paths to the shaders
             ShaderProgram = new ShaderProgram(VertexShader, FragmentShader);
 
@@ -263,6 +263,26 @@ namespace Graphics
             // add vertex attributes in openGl and shaderprogram
             int Location = 0;
             int ByteOffset = 0;
+            
+            /*
+             * This works but is unneccessary as right now render object is non generic class
+             * If i were to change this i would use this
+            foreach(FieldInfo Field in new Vertex2D().GetType().GetFields())
+            {
+                switch (Field.FieldType.ToString())
+                {
+                    case "OpenTK.Mathematics.Vector2": LoadBufferAttribute<Vector2>(ref Location, ref ByteOffset, ArrayHandle, Field.Name); break;
+                    case "OpenTK.Mathematics.Vector3": LoadBufferAttribute<Vector3>(ref Location, ref ByteOffset, ArrayHandle, Field.Name); break;
+                    case "OpenTK.Mathematics.Vector4": LoadBufferAttribute<Vector4>(ref Location, ref ByteOffset, ArrayHandle, Field.Name); break;
+                    case "OpenTK.Mathematics.Color4": LoadBufferAttribute<Vector4>(ref Location, ref ByteOffset, ArrayHandle, Field.Name); break;
+                    case "OpenTK.Mathematics.Matrix2": LoadBufferAttribute<Matrix2>(ref Location, ref ByteOffset, ArrayHandle, Field.Name); break;
+                    case "OpenTK.Mathematics.Matrix3": LoadBufferAttribute<Matrix3>(ref Location, ref ByteOffset, ArrayHandle, Field.Name); break;
+                    case "OpenTK.Mathematics.Matrix4": LoadBufferAttribute<Matrix4>(ref Location, ref ByteOffset, ArrayHandle, Field.Name); break;
+                    default: throw new Exception(Field.FieldType.ToString());
+                }
+            }
+            */   
+            
             LoadBufferAttribute<Vector2>(ref Location, ref ByteOffset, ArrayHandle, "VertUV");
             LoadBufferAttribute<Vector2>(ref Location, ref ByteOffset, ArrayHandle, "TextureUV");
             LoadBufferAttribute<Vector4>(ref Location, ref ByteOffset, ArrayHandle, "VertColour");

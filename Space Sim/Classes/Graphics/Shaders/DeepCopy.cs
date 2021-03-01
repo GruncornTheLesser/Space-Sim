@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Shaders
+namespace Graphics.Shaders
 {
     // I'm using deep copies to replace value pointers.
     // Ive set up the deep copies using delegates Func/Action for get/set

@@ -3,7 +3,7 @@ using OpenTK.Mathematics;
 using System;
 using Graphics;
 
-namespace Shaders
+namespace Graphics.Shaders
 {
 
 
@@ -132,7 +132,8 @@ namespace Shaders
                     return "mat3";
                 case "OpenTK.Mathematics.Matrix4":
                     return "mat4";
-
+                case "System.Boolean":
+                    return "bool";
                 default:
                     throw new NotImplementedException($"type: {typeof(T)}");
             }
@@ -219,6 +220,18 @@ namespace Shaders
         /// </summary>
         /// <param name="DeepCopy"></param>
         public override void SetUniform(IDeepCopy DeepCopy) => parameter = (DeepCopy<float>)DeepCopy;
+
+    }
+    class BoolUniform : UniformParameter
+    {
+        DeepCopy<bool> parameter = new DeepCopy<bool>(); // default local value inside Deepcopy
+        public BoolUniform(ShaderTarget ShaderTarget, string Name, DeepCopy<bool> Parameter) : base(ShaderTarget, Name) => parameter = Parameter;
+        public BoolUniform(ShaderTarget ShaderTarget, string Name) : base(ShaderTarget, Name) { }
+        public BoolUniform(ShaderTarget ShaderTarget, string Name, Func<bool> get_parameter) : base(ShaderTarget, Name) => parameter = new DeepCopy<bool>(get_parameter);
+        public override void OnUpdateUniform() => GL.Uniform1(location, parameter.Value ? 1 : 0);
+        public override string VertDefinition(ref int Location) => GenericVertDef<bool>(ref Location);
+        public override string FragDefinition(ref int Location) => GenericFragDef<bool>(ref Location);
+        public override void SetUniform(IDeepCopy DeepCopy) => parameter = (DeepCopy<bool>)DeepCopy;
 
     }
     class IntUniform : UniformParameter
@@ -317,13 +330,13 @@ namespace Shaders
     }
     class TextureUniform : UniformParameter
     {
-        private DeepCopy<int> parameter;
+        private Func<int> getter;
 
-        public TextureUniform(ShaderTarget ShaderTarget, string Name, DeepCopy<int> Texture) : base(ShaderTarget, Name) => parameter = Texture;
+        public TextureUniform(ShaderTarget ShaderTarget, string Name, Func<int> Texture) : base(ShaderTarget, Name) => getter = Texture;
         public override void OnUpdateUniform()
         {
             int unit = TextureManager.TexturesLoaded++;
-            GL.BindTextureUnit(unit, parameter.Value);
+            GL.BindTextureUnit(unit, getter());
 
             GL.ActiveTexture((TextureUnit)unit);
             GL.Uniform1(location, (int)unit);

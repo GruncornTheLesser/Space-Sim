@@ -2,7 +2,7 @@
 using OpenTK.Mathematics;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using Graphics;
-using Shaders;
+using Graphics.Shaders;
 
 namespace GameObjects
 {
@@ -37,8 +37,8 @@ namespace GameObjects
             ShaderProgram.AddUniform(new FloatUniform(ShaderTarget.Both, "Time", () => EventManager.Program_Time));
 
             // pass in specific shader parameters
-            ShaderProgram.AddUniform(new TextureUniform(ShaderTarget.Fragment, "BorderTexture", new DeepCopy<int>(() => TextureManager.Get(BorderTexture))));
-            ShaderProgram.AddUniform(new TextureUniform(ShaderTarget.Fragment, "InsideTexture", new DeepCopy<int>(() => TextureManager.Get(InsideTexture))));
+            ShaderProgram.AddUniform(new TextureUniform(ShaderTarget.Fragment, "BorderTexture", () => TextureManager.Get(BorderTexture)));
+            ShaderProgram.AddUniform(new TextureUniform(ShaderTarget.Fragment, "InsideTexture", () => TextureManager.Get(InsideTexture)));
             
             // compile shaders
             ShaderProgram.CompileProgram();

@@ -13,6 +13,7 @@ namespace GameObjects
      * Barnes-Hut algorithm
      * launch rocket on click and drag
      * Real Numbers are messing my calculations up from floating point error or something-> find some better ones
+     * +- problems
      */
     public class SpaceSimWindow : RenderWindow
     {
@@ -24,6 +25,9 @@ namespace GameObjects
         internal static PressButton LightingButton;
         internal static SliderButton TimeSlider;
 
+        internal static Action<float> UpdatePosition = (delta) => { };
+
+        internal static Sphereoid sun;
 
         public SpaceSimWindow(GameWindowSettings GWS, NativeWindowSettings NWS) : base(GWS, NWS, 1)
         {
@@ -32,20 +36,22 @@ namespace GameObjects
             LightingButton = new PressButton(new Vector2(0.95f, 0.75f), new Vector2(0.1f), "Button_Lighting"); // toggles directional lighting
             TimeSlider = new SliderButton(new Vector2(-0.6f, -0.95f), new Vector2(0.8f, 0.1f)); // changes process speed
 
-            EventManager.Program_Process += OnProcess;
+            EventManager.Program_Process += OnProgramProcess;
 
             //  sun
-            Sphereoid sun = new Sun(Vector2.Zero, Vector2.Zero, TextureRes);
-
-            Sphereoid mercury = new Mercury(  new Vector2(57.910f, 0), Vector2.Zero, TextureRes);
-            Sphereoid venus = new Venus(      new Vector2(108.210f, 0), Vector2.Zero, TextureRes);
-            Sphereoid earth = new Earth(      new Vector2(149.600f, 0), new Vector2(0, 3f), TextureRes);
-            Sphereoid moon = new Moon(        new Vector2(149.985f, 0), Vector2.Zero, TextureRes);
-            Sphereoid mars = new Mars(        new Vector2(227.920f, 0), Vector2.Zero, TextureRes);
-            Sphereoid jupiter = new Jupiter(  new Vector2(778.570f, 0), Vector2.Zero, TextureRes);
-            Sphereoid saturn = new Saturn(    new Vector2(1433.530f, 0), Vector2.Zero, TextureRes);
-            Sphereoid uranus = new Uranus(    new Vector2(2872.460f, 0), Vector2.Zero, TextureRes);
-            Sphereoid neptune = new Neptune(  new Vector2(4495.060f, 0), Vector2.Zero, TextureRes);
+            sun = new Sun(TextureRes);
+            sun.Mass = 0;
+            Sphereoid mercury = new Mercury(TextureRes);
+            Sphereoid venus = new Venus(TextureRes);
+            Sphereoid earth = new Earth(TextureRes);
+            earth.Velocity = Vector2d.Zero;
+            Sphereoid moon = earth.AddSatellite(3.47e0f, 7.3e22, 3.84e2f, TextureRes, "moon.png");
+            //Sphereoid moon = new Moon(TextureRes);
+            Sphereoid mars = new Mars(TextureRes);
+            Sphereoid jupiter = new Jupiter(TextureRes);
+            Sphereoid saturn = new Saturn(TextureRes);
+            Sphereoid uranus = new Uranus(TextureRes);
+            Sphereoid neptune = new Neptune(TextureRes);
 
             HomeButton.Release += () => Camera.WorldPosition = Vector2.Zero;
             ReScaleButton.Release += () =>
@@ -54,7 +60,7 @@ namespace GameObjects
                 mercury.Enlarged = !mercury.Enlarged;
                 venus.Enlarged = !venus.Enlarged;
                 earth.Enlarged = !earth.Enlarged;
-                moon.Enlarged = !moon.Enlarged;
+                moon.Visible = !moon.Visible;
                 mars.Enlarged = !mars.Enlarged;
                 jupiter.Enlarged = !jupiter.Enlarged;
                 saturn.Enlarged = !saturn.Enlarged;
@@ -73,76 +79,48 @@ namespace GameObjects
                 uranus.DirectionalLighting = !uranus.DirectionalLighting;
                 neptune.DirectionalLighting = !neptune.DirectionalLighting;
             };
-            TimeSlider.Set_Percentage += (new_P) => EventManager.Program_Speed = MathF.Min(MathF.Pow(10, new_P * 5), 1000); 
+            TimeSlider.Set_Percentage += (new_P) => EventManager.Program_Speed = new_P * 24 * 3600 * 365; // 1 year per second // makes line become unstable passed 1 year
             TimeSlider.Percentage = 0.0f;
             
         }
-        private void OnProcess(float delta)
+        private void OnProgramProcess(float delta)
         {
-            Title =
-                $"MousePos: " +
-                $"{MathF.Round(MouseState.Position.X, 2)}," +
-                $"{MathF.Round(MouseState.Position.Y, 2)} " +
+            int MaxStep = 3600 * 24; // 1 day
+            // Max step is the maximum length of time passed before an update. if (delta > MaxStep) Evolve the simulation by 
 
-                $"MouseScreenPos: " +
-                $"{MathF.Round(MouseToScreen(MouseState.Position).X, 2)}," +
-                $"{MathF.Round(MouseToScreen(MouseState.Position).Y, 2)} " +
-
-                $"MouseWorldPos: " +
-                $"{MathF.Round(MouseToWorld(MouseState.Position).X, 2)}," +
-                $"{MathF.Round(MouseToWorld(MouseState.Position).Y, 2)} " +
-
-                $"FPS: {1 / delta * EventManager.Program_Speed : 0} "+
-                $"TPS: {delta}"; // : 0 truncates to 0 decimal places
-
-            //QuadTree.CalculateForces(); // Calculate new Force through tree
-
-            // Brute Force
-            for (int TimeStep = 0; TimeStep < Math.Ceiling(delta); TimeStep++)
+            // if delta > TimeStep, repeat Timesteps until delta time passed
+            while (delta > MaxStep)
             {
-                for (int i = 0; i < QuadTree.MassPool.Count; i++)
-                {
-                    for (int j = 0; j < QuadTree.MassPool.Count; j++)
-                    {
-                        if (i != j) QuadTree.MassPool[i].Velocity += CalcVel(QuadTree.MassPool[i], QuadTree.MassPool[j]) * MathF.Min(1, delta - TimeStep);
-                    }
-                }
-            /* Only calculate sun
-                QuadTree.MassPool[1].Velocity += CalcVel(QuadTree.MassPool[1], QuadTree.MassPool[0]) * MathF.Min(1, delta - TimeStep);
-                QuadTree.MassPool[2].Velocity += CalcVel(QuadTree.MassPool[2], QuadTree.MassPool[0]) * MathF.Min(1, delta - TimeStep);
-                QuadTree.MassPool[3].Velocity += CalcVel(QuadTree.MassPool[3], QuadTree.MassPool[0]) * MathF.Min(1, delta - TimeStep);
-                QuadTree.MassPool[4].Velocity += CalcVel(QuadTree.MassPool[4], QuadTree.MassPool[0]) * MathF.Min(1, delta - TimeStep);
-                QuadTree.MassPool[5].Velocity += CalcVel(QuadTree.MassPool[5], QuadTree.MassPool[0]) * MathF.Min(1, delta - TimeStep);
-                QuadTree.MassPool[6].Velocity += CalcVel(QuadTree.MassPool[6], QuadTree.MassPool[0]) * MathF.Min(1, delta - TimeStep);
-                QuadTree.MassPool[7].Velocity += CalcVel(QuadTree.MassPool[7], QuadTree.MassPool[0]) * MathF.Min(1, delta - TimeStep);
-                QuadTree.MassPool[8].Velocity += CalcVel(QuadTree.MassPool[8], QuadTree.MassPool[0]) * MathF.Min(1, delta - TimeStep);
-                QuadTree.MassPool[9].Velocity += CalcVel(QuadTree.MassPool[9], QuadTree.MassPool[0]) * MathF.Min(1, delta - TimeStep);
-            */
+                delta -= MaxStep;
+                BruteForce(MaxStep);//EvolveBarnesHut(MaxStep);//
+
+                Vector2d V = QuadTree.MassPool[0].Velocity;
+
+                //(2.65313411713586E-08, 0) -> BarnesHut θ = 0
+                //(2.65313411713586E-08, 0) -> BruteForce 
             }
+            if (delta != 0) BruteForce(delta);//EvolveBarnesHut(delta);//
+
+
         }
-        private static Vector2d CalcVel(PointMass P, PointMass S)
+        private void BruteForce(float dt)
         {
-            Vector2d r = P.Position - S.Position;
-            Vector2d a = Vector2d.Zero;
-            /*
-            if (Math.Abs(r.Y) < S.Scale.Y / 2 && Math.Abs(r.X) < S.Scale.X / 2)
+            // O(n^2)
+            foreach(PointMass P1 in QuadTree)
             {
-                P.Visible = false; // crash
-                return Vector2d.Zero;
+                Vector2d Acc = Vector2d.Zero;
+                foreach (PointMass P2 in QuadTree)
+                {
+                    if (P1 != P2) Acc += P1.CalcAccFrom(P2, dt);
+                }
+                P1.Velocity += Acc * dt;
             }
-            */
-            if (Math.Abs(r.X) > S.Scale.X / 2) a.X = S.Mass * 6.67e-23 * r.X / Math.Abs(r.X) / Math.Pow(r.X, 2);
-            if (Math.Abs(r.Y) > S.Scale.Y / 2) a.Y = S.Mass * 6.67e-23 * r.Y / Math.Abs(r.Y) / Math.Pow(r.Y, 2);
-            
-            /*
-            // speed limit from unpredictable r calculation ie as r -> 0, a -> infinity
-            if (Math.Abs(a.X) > 10 || Math.Abs(a.Y) > 10)
-            {
-                P.Visible = false;
-            }
-            */
-
-            return a;
+            UpdatePosition(dt);
+        }
+        private void EvolveBarnesHut(float dt)
+        {
+            QuadTree.Evolve(dt, 0);
+            UpdatePosition(dt);
         }
     }
 }

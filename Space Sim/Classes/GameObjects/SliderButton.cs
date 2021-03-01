@@ -2,7 +2,7 @@
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
-using Shaders;
+using Graphics.Shaders;
 using Graphics;
 
 namespace GameObjects
@@ -41,8 +41,8 @@ namespace GameObjects
             ShaderProgram.AddUniform(new FloatUniform(ShaderTarget.Fragment, "Percentage", new DeepCopy<float>(() => Percentage)));
             ShaderProgram.AddUniform(new FloatUniform(ShaderTarget.Fragment, "XYratio", new DeepCopy<float>(() => Scale.X / Scale.Y)));
             
-            ShaderProgram.AddUniform(new TextureUniform(ShaderTarget.Fragment, "IconTexture", new DeepCopy<int>(() => TextureManager.Get(IconTexture))));
-            ShaderProgram.AddUniform(new TextureUniform(ShaderTarget.Fragment, "ScaleTexture", new DeepCopy<int>(() => TextureManager.Get(SliderTexture))));
+            ShaderProgram.AddUniform(new TextureUniform(ShaderTarget.Fragment, "IconTexture", () => TextureManager.Get(IconTexture)));
+            ShaderProgram.AddUniform(new TextureUniform(ShaderTarget.Fragment, "ScaleTexture", () => TextureManager.Get(SliderTexture)));
 
             // compile shader
             ShaderProgram.CompileProgram();

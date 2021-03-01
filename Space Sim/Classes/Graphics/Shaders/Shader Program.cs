@@ -1,14 +1,9 @@
 ﻿using System;
 using System.IO;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Text;
 using OpenTK.Graphics.OpenGL4;
-using OpenTK.Mathematics;
-using System.Collections;
-using Graphics;
 
-namespace Shaders
+namespace Graphics.Shaders
 {
     class ShaderProgram
     {
@@ -22,7 +17,7 @@ namespace Shaders
         #endregion
 
         /// <summary>
-        /// used to setting uniform after program has been compliled.
+        /// used to set uniform after program has been compiled.
         /// </summary>
         /// <param name="Name">The name of the parameter.</param>
         /// <returns></returns>
@@ -199,7 +194,7 @@ namespace Shaders
 
             // checks if compilation worked
             string info = GL.GetShaderInfoLog(NewShaderHandle);
-            if (!string.IsNullOrWhiteSpace(info)) throw new Exception($"Failed to compile {shadertype}{Environment.NewLine}{code}{Environment.NewLine}{info}");
+            if (!string.IsNullOrWhiteSpace(info)) throw new Exception($"Failed to compile {path}{Environment.NewLine}{code}{Environment.NewLine}{info}");
 
             return NewShaderHandle;
         }

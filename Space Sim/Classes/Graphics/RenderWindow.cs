@@ -1,17 +1,9 @@
 ﻿using System;
-using System.IO;
-using System.Text;
-using System.Collections.Generic;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
-using OpenTK.Input;
 using OpenTK.Mathematics;
-using OpenTK.Windowing.GraphicsLibraryFramework;
-using Graphics;
-using Shaders;
-using System.Linq;
 namespace Graphics
 {
 
@@ -49,6 +41,21 @@ namespace Graphics
         }
         protected override void OnRenderFrame(FrameEventArgs e)
         {
+            Title =
+                $"MousePos: " +
+                $"{MathF.Round(MouseState.Position.X, 2)}," +
+                $"{MathF.Round(MouseState.Position.Y, 2)} " +
+
+                $"MouseScreenPos: " +
+                $"{MathF.Round(MouseToScreen(MouseState.Position).X, 2)}," +
+                $"{MathF.Round(MouseToScreen(MouseState.Position).Y, 2)} " +
+
+                $"MouseWorldPos: " +
+                $"{MathF.Round(MouseToWorld(MouseState.Position).X, 2)}," +
+                $"{MathF.Round(MouseToWorld(MouseState.Position).Y, 2)} " +
+
+                $"FPS: {1 / e.Time : 0} ";
+
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit); // clear last frame
 
             // call Process events

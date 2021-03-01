@@ -23,7 +23,9 @@ void main(void)
 		// map texture to sphere + rotate Y to rotate and wrap around
 		vec2 TexCoords = vec2(0.5 + atan(rotnorm.z, rotnorm.x) / (2.0 * pi), 0.5 - asin(rotnorm.y) / pi);
 		// dot product normal and light direction * texture colour
-		Colour = vec4(vec3(max(dark, dot(normal, normalize(lightDir)))) * texture(Texture, TexCoords).xyz, 1.0);
+		vec3 Col = texture(Texture, TexCoords).xyz;
+		if (DoLighting) Col *= dot(normal, normalize(lightDir));
+		Colour = vec4(Col, 1.0);
 	}
 	
 	

@@ -34,6 +34,9 @@
     <None Update="Shaders\LineVert.shader">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Shaders\EarthFrag.shader">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Shaders\SliderButtonFrag.shader">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -57,6 +60,18 @@
     </None>
     <None Update="Shaders\AnimatedVert.shader">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Textures\2K planet textures\earth_spec.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Textures\2K planet textures\earth_norm.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Textures\2K planet textures\earth_night.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Textures\2K planet textures\earth_cloud.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Textures\2K planet textures\earth.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -87,42 +102,6 @@
     </None>
     <None Update="Textures\Button textures\Button_UnPressed.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Textures\HRes Planet textures\earth.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Textures\HRes Planet textures\jupiter.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Textures\HRes Planet textures\mars.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Textures\HRes Planet textures\mercury.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Textures\HRes Planet textures\moon.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Textures\HRes Planet textures\neptune.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Textures\HRes Planet textures\saturn.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Textures\HRes Planet textures\saturn_ring.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Textures\HRes Planet textures\sun.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Textures\HRes Planet textures\uranus.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Textures\HRes Planet textures\venus.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Textures\HRes Planet textures\venus_atmosphere.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Textures\2K planet textures\jupiter.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

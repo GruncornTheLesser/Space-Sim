@@ -23,8 +23,6 @@ namespace Graphics
             ObjectPool.Add(item);
             item.Set_Z_Index += QuickSort;
             QuickSort(item.Z_index);
-            
-            Display();
 
         }
         // removes object from render list.
@@ -32,7 +30,6 @@ namespace Graphics
         {
             item.Set_Z_Index -= QuickSort;
             ObjectPool.Remove(item);
-            Display();
         }
 
         #region QuickSort
@@ -40,7 +37,7 @@ namespace Graphics
         /// used for Z index changed calls
         /// </summary>
         /// <param name="NewZ"></param>
-        private static void QuickSort(int NewZ) => QuickSort(0, Count);
+        private static void QuickSort(int NewZ) => QuickSort(0, Count - 1);
 
         /// <summary>
         /// quick sort with last index's value as pivot.
@@ -64,38 +61,39 @@ namespace Graphics
         /// </summary>
         /// <param name="Left">The left bound index(inclusive).</param>
         /// <param name="Right">The right bound (exclusive).</param>
-        /// <param name="Pivot">The value its being reorganised with.</param>
         /// <returns></returns>
         private static int QuickSortPartition(int Left, int Right)
         {
-            int Pivot = ObjectPool[Left].Z_index;
-            int i = Left + 1; // runs left to right
-            int j = Right; // runs right to left
-            while (true)
-            {
-                while (i < Right && ObjectPool[i++].Z_index < Pivot); // Adds to left pointer until value less than pivot
-                while (ObjectPool[--j].Z_index > Pivot); // subtracts from right pointer until value less than pivot
+            int pivot = ObjectPool[Right].Z_index; // take pivot point
 
-                if (i >= j) break; // if pointers havent passed each other
-                else swap(i++, j--); // swap the values that it got stuck on
+            int i = Left - 1; // iterator
+
+            //2. Reorder the collection.
+            for (int j = Left; j < Right; j++)
+            {
+                if (ObjectPool[j].Z_index <= pivot)
+                {
+                    i++;
+                    Swap(i, j);
+                }
             }
-            swap(j, Left); // swap j index with Pivot index(Left)
-            return j;
+
+            RenderObject2D temp1 = ObjectPool[i + 1];
+            ObjectPool[i + 1] = ObjectPool[Right];
+            ObjectPool[Right] = temp1;
+
+            return i + 1;
         }
-        // Swaps value at index a with value at index b
-        private static void swap(int a, int b)
+        /// <summary>
+        /// Swaps value at index a with value at index b
+        /// </summary>
+        /// <param name="a">1st index to swap.</param>
+        /// <param name="b">2nd index to swap.</param>
+        private static void Swap(int a, int b)
         {
             RenderObject2D tempb = ObjectPool[a];
             ObjectPool[a] = ObjectPool[b];
             ObjectPool[b] = tempb;
-        }
-        /// <summary>
-        /// Creates array for testing. 
-        /// </summary>
-        public static void Display()
-        {
-            int[] arr = new int[Count];
-            for (int i = 0; i < Count; i++) arr[i] = ObjectPool[i].Z_index;
         }
         #endregion
 
