@@ -7,10 +7,6 @@ using Graphics;
 
 namespace GameObjects
 {
-    /* THING TO DO:
-     * Update Scale on Window resize
-     */
-
     class SliderButton : RenderObject2D
     {
         ClickBox clickbox;
@@ -18,13 +14,16 @@ namespace GameObjects
         public float Percentage
         {
             get => percentage;
-            set => Set_Percentage(value);
+            set {
+                percentage = value;
+                Set_Percentage(percentage);
+            }
         }
         private float percentage;
-        public Action<float> Set_Percentage;
+        public Action<float> Set_Percentage = (percent) => { };
 
-        private string IconTexture;
-        private string SliderTexture;
+        private readonly string IconTexture;
+        private readonly string SliderTexture;
 
         
 
@@ -59,12 +58,7 @@ namespace GameObjects
             };
             clickbox.UnClick += () => {
                 EventManager.MouseMove -= Move_Slider;
-            };
-            Set_Percentage = (New_Percentage) =>
-            {
-                percentage = New_Percentage;
-            };
-            
+            };            
         }
         private void Move_Slider(MouseState MS, MouseMoveEventArgs e)
         {

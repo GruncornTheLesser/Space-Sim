@@ -5,6 +5,9 @@ using OpenTK.Graphics.OpenGL4;
 
 namespace Graphics.Shaders
 {
+    /// <summary>
+    /// manages object's shader.
+    /// </summary>
     class ShaderProgram
     {
         // the handle in openGl for this program
@@ -242,9 +245,9 @@ namespace Graphics.Shaders
         /// </summary>
         public void UseProgram()
         {
-            TextureManager.TexturesLoaded = 0;
+            TextureManager.TexturesLoaded = 0; // each time a shader program is used the texture units are forgotten ie allows overwriting of textures
             GL.UseProgram(ProgramHandle); // tell openGL to use this object
-            UpdateUniforms();// update the uniforms in the shaders
+            UpdateUniforms(); // update the uniforms in the shaders
         }
     }
 }

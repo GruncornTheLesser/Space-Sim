@@ -27,7 +27,7 @@ namespace GameObjects
      * if S is Branch, insert B into Branch, update center of mass
      * if S is Leaf, Create new branch using S Quad, insert S, insert B, update center of mass
      * 
-     * Calculate Forces
+     * Calculate Forces/Accelerations
      * 
      * iterate through each body and starting at the root traverse the tree use:
      * to find force on body B from SubTree S:
@@ -39,54 +39,52 @@ namespace GameObjects
      * 
      */
 
-    public class BarnesHut : IEnumerable<PointMass>
+    public class BarnesHut : IEnumerable
     {
-        internal List<PointMass> MassPool = new List<PointMass>();
-        internal Stack<Leaf> LeafPool = new Stack<Leaf>();
-        internal Quad TotalQuad;
+        private Stack<Leaf> LeafPool = new Stack<Leaf>();
+        private Quad TQuad; // max quad
         Branch Root;
 
         public BarnesHut(Vector2 Min, Vector2 Max)
         {
-            TotalQuad = new Quad(Min, Max);
-            Root = new Branch(this, null, TotalQuad);
+            TQuad = new Quad(Min, Max);
+            Root = new Branch(this, null, TQuad);
         }
 
         internal void Evolve(float delta, float theta)
         {
-            // recreate tree
+            
             Clear();
+            // recreate tree
             foreach (Leaf L in LeafPool) Root.Insert(L);
-            foreach (Leaf L in LeafPool)
-            {
-                L.PointMass.Velocity += Root.AccelForPointMass(L.PointMass, theta) * delta;
-            }
-        }
-        internal void Clear()
-        {
-            Root = new Branch(this, null, TotalQuad);
-        }
-        internal void Add(PointMass P)
-        {
-            MassPool.Add(P); // just for brute force algorithm
-            LeafPool.Push(new Leaf(this, P));
-        }
+            // calculate acceleration and change velocity
+            foreach (Leaf L in LeafPool) L.PointMass.Velocity += Root.AccelForPointMass(L.PointMass, theta) * delta; 
 
-        // used for brute force algorithms
-        IEnumerator<PointMass> IEnumerable<PointMass>.GetEnumerator()
-        {
-            foreach (Leaf L in LeafPool) yield return L.PointMass;
         }
+        /// <summary>
+        /// adds pointmass P to pool. when Tree is next evolved, P will be incorportored. however you spell that.
+        /// </summary>
+        /// <param name="P">pointmass to be added.</param>
+        internal void Add(PointMass P) => LeafPool.Push(new Leaf(this, P));
+        /// <summary>
+        /// clears the tree.
+        /// </summary>
+        private void Clear() => Root = new Branch(this, null, TQuad);
+        
         IEnumerator IEnumerable.GetEnumerator()
         {
-            foreach (Leaf L in LeafPool) yield return L.PointMass;
+            // used in brute force algorithm
+            foreach (Leaf L in LeafPool) yield return L.PointMass;// iterates through Point Masses
         }
-
+        
+        /// <summary>
+        /// abstract class containing the key fields for nodes in the tree.
+        /// </summary>
         internal abstract class SubTree
         {
-            internal Branch Parent;
-            internal Quad Quad;
-            internal BarnesHut Tree;
+            public Branch Parent;
+            public Quad Quad;
+            public BarnesHut Tree;
 
             public SubTree(BarnesHut Tree, Branch Parent, Quad Quad)
             {
@@ -97,17 +95,20 @@ namespace GameObjects
             /// <summary>
             /// Calculates the acceleration from this point mass to move point mass P
             /// </summary>
-            /// <param name="P">the point mass that's acceleration is being calculated</param>
-            /// <returns>the acceleration from the force of this object</returns>
-            internal abstract Vector2d AccelForPointMass(PointMass P, float theta);
+            /// <param name="P">the pointmass thats being accelerated</param>
+            /// <param name="theta">a value etwee 1 and 0 to control the accuracy of the simulation.</param>
+            /// <returns>the acceleration from the force of this point mass of cluster of point masses</returns>
+            public abstract Vector2d AccelForPointMass(PointMass P, float theta);
         }
 
 
-
+        /// <summary>
+        /// a node in the tree which has children
+        /// </summary>
         internal class Branch : SubTree
         {
             internal Quad[] Quads = new Quad[4];
-            internal SubTree[] Children = new SubTree[4];
+            internal SubTree[] Children = new SubTree[4]; // array of leaves and branches
 
             internal int Count = 0;
             internal double TotalMass;
@@ -123,7 +124,7 @@ namespace GameObjects
                 Quads[2] = new Quad(Mid, Quad.Max);
                 Quads[3] = new Quad(Mid.X, Quad.Min.Y, Quad.Max.X, Mid.Y);
             }
-            internal void Insert(Leaf Leaf)
+            public void Insert(Leaf Leaf)
             {
                 Count += 1;
                 TotalMass += Leaf.PointMass.Mass;
@@ -156,7 +157,7 @@ namespace GameObjects
                     }
                 }
             }
-            internal override Vector2d AccelForPointMass(PointMass P, float theta)
+            public override Vector2d AccelForPointMass(PointMass P, float theta)
             {
                 Vector2d Acc = Vector2.Zero;
                 float s = Quad.Max.X - Quad.Min.X;
@@ -180,12 +181,14 @@ namespace GameObjects
         }
 
 
-
+        /// <summary>
+        /// The end of a branch. mostly just a wrapper of a Pointmass.
+        /// </summary>
         internal class Leaf : SubTree
         {
-            internal PointMass PointMass;
-            internal Leaf(BarnesHut Tree, PointMass P) : base(Tree, null, new Quad()) => PointMass = P;// on init, Parent nor quad is set yet
-            internal override Vector2d AccelForPointMass(PointMass P, float theta)
+            public PointMass PointMass;
+            public Leaf(BarnesHut Tree, PointMass P) : base(Tree, null, new Quad()) => PointMass = P;// on init, Parent nor quad is set yet
+            public override Vector2d AccelForPointMass(PointMass P, float theta)
             {
                 if (PointMass == P) return Vector2d.Zero;
                 else return P.CalcAccFrom(PointMass.Mass, PointMass.Position);
@@ -198,7 +201,7 @@ namespace GameObjects
         /// </summary>
         internal struct Quad
         {
-            internal Vector2 Min, Max;
+            public Vector2 Min, Max;
             public Quad(Vector2 Min, Vector2 Max)
             {
                 this.Min = Min;

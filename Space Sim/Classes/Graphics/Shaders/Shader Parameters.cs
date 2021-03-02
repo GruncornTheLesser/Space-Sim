@@ -24,7 +24,6 @@ namespace Graphics.Shaders
     interface IVertexParameter
     {
         public abstract string VertDefinition(ref int Location);
-
     }
     
     /// <summary>
