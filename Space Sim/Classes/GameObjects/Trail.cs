@@ -27,7 +27,7 @@ namespace GameObjects
         /// <param name="Capacity">the number of vertices this object uses. Higher capacity makes longer lines.</param>
         /// <param name="UpdateTime">the number of milliseconds between position updates. Smaller update times increases smoothness. 0 processes every frame.</param>
         /// <param name="GetNewPosition">A delegate to get the transform position of the object this trails behind.</param>
-        public Trail(int Capacity, int UpdateTime, Func<Vector2> GetNewPosition, Color4 Colour) : base(new Vertex2D[] { }, "Line", "Line")
+        public Trail(RenderWindow RenderWindow, int Capacity, int UpdateTime, Func<Vector2> GetNewPosition, Color4 Colour) : base(RenderWindow, new Vertex2D[] { }, "Line", "Line")
         {
             this.GetVertex = () => new Vertex2D(GetNewPosition(), Vector2.Zero, Color4.WhiteSmoke);
             this.UpdateTime = UpdateTime;
@@ -47,8 +47,8 @@ namespace GameObjects
             ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "camera", () => RenderWindow.Camera.Transform_Matrix));
             ShaderProgram.CompileProgram();
             
-            if (UpdateTime == 0) EventManager.Program_Process += UpdateQueueImmediate; // update every frame(as fast as possible)
-            else EventManager.Program_Process += UpdateQueueLoop; // start loop
+            if (UpdateTime == 0) RenderWindow.EventManager.Program_Process += UpdateQueueImmediate; // update every frame(as fast as possible)
+            else RenderWindow.EventManager.Program_Process += UpdateQueueLoop; // start loop
         }
         public void UpdateQueueImmediate(float delta)
         {
@@ -68,14 +68,14 @@ namespace GameObjects
 
             VertexArray = VerticeQueue.ToArray(); // update vertex array
 
-            EventManager.Program_Process -= UpdateQueueLoop; // remove from regular update
-            Task.Delay(UpdateTime).ContinueWith(ID => EventManager.Program_Process += UpdateQueueLoop); // wait Update Time the add Update queue back to Process
+            RenderWindow.EventManager.Program_Process -= UpdateQueueLoop; // remove from regular update
+            Task.Delay(UpdateTime).ContinueWith(ID => RenderWindow.EventManager.Program_Process += UpdateQueueLoop); // wait Update Time the add Update queue back to Process
         }
         
         public void Stop()
         {
-            if (UpdateTime == 0) EventManager.Program_Process -= UpdateQueueImmediate;
-            else EventManager.Program_Process -= UpdateQueueLoop;
+            if (UpdateTime == 0) RenderWindow.EventManager.Program_Process -= UpdateQueueImmediate;
+            else RenderWindow.EventManager.Program_Process -= UpdateQueueLoop;
         }
     }
 }

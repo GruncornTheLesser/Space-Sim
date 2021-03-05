@@ -27,10 +27,5 @@ void main(void)
 		if (DoLighting) Col *= dot(normal, normalize(lightDir));
 		Colour = vec4(Col, 1.0);
 	}
-	
-	
-	
-	
-
 
 }

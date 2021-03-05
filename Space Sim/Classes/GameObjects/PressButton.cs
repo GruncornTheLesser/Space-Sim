@@ -22,7 +22,7 @@ namespace GameObjects
         private string BorderTexture;
         private string InsideTexture;
 
-        public PressButton(Vector2 Position, Vector2 Scale, string Button) : base(SquareMesh, "Default", "PressButton")
+        public PressButton(RenderWindow RenderWindow, Vector2 Position, Vector2 Scale, string Button) : base(RenderWindow, SquareMesh, "Default", "PressButton")
         {
             // create textures
             InsideTexture = "Textures/Button textures/" + Button + ".png";
@@ -34,7 +34,7 @@ namespace GameObjects
             // pass in default shader parameters
             ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "transform", () => Transform_Matrix));
             ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "camera", () => RenderWindow.Camera.BaseMatrix)); // gets replaced when fixed to screen
-            ShaderProgram.AddUniform(new FloatUniform(ShaderTarget.Both, "Time", () => EventManager.Program_Time));
+            ShaderProgram.AddUniform(new FloatUniform(ShaderTarget.Both, "Time", () => RenderWindow.EventManager.Program_Time));
 
             // pass in specific shader parameters
             ShaderProgram.AddUniform(new TextureUniform(ShaderTarget.Fragment, "BorderTexture", () => TextureManager.Get(BorderTexture)));
@@ -53,7 +53,7 @@ namespace GameObjects
             this.Scale = Scale;
 
             // initiate clickbox
-            clickbox = new ClickBox(new Vector2[] { new Vector2(-0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, -0.5f), new Vector2(-0.5f, -0.5f) }, MouseButton.Button1, true, () => Transform_Matrix);
+            clickbox = new ClickBox(RenderWindow, new Vector2[] { new Vector2(-0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, -0.5f), new Vector2(-0.5f, -0.5f) }, MouseButton.Button1, true, () => Transform_Matrix);
             
             Down = () => { }; // do nothing by default can be changed in derived class or outside object
             Release = () => { };

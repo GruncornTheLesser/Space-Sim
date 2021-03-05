@@ -11,6 +11,7 @@ namespace GameObjects
     /// </summary>
     class ClickBox
     {
+        RenderWindow RenderWindow;
         private Vector2[] HitBox;
         
         
@@ -45,11 +46,12 @@ namespace GameObjects
         public Action UnClick;
         
 
-        public ClickBox(Vector2[] HitBox, MouseButton ActionButton, bool fixedtoscreen, Func<Matrix3> Get_Transform_Matrix)
+        public ClickBox(RenderWindow RenderWindow, Vector2[] HitBox, MouseButton ActionButton, bool fixedtoscreen, Func<Matrix3> Get_Transform_Matrix)
         {
+            this.RenderWindow = RenderWindow;
             // attach events
-            EventManager.MouseDown += OnMouseDown;
-            EventManager.MouseUp += OnMouseUp;
+            RenderWindow.EventManager.MouseDown += OnMouseDown;
+            RenderWindow.EventManager.MouseUp += OnMouseUp;
 
             this.Get_Obj_Transform = Get_Transform_Matrix;
             this.FixToScreen = fixedtoscreen;
@@ -58,18 +60,19 @@ namespace GameObjects
 
             this.Click = () =>
             {
-                Time_Since_Last_Call = EventManager.System_Time - Time_of_Last_Call;
-                Time_of_Last_Call = EventManager.System_Time;
+                Time_Since_Last_Call = RenderWindow.EventManager.System_Time - Time_of_Last_Call;
+                Time_of_Last_Call = RenderWindow.EventManager.System_Time;
                 IsClicked = true;
             };
             this.UnClick = () => IsClicked = false;
 
         }
-        public ClickBox(Func<Matrix3> Get_Transform_Matrix, bool FixToScreen)
+        public ClickBox(RenderWindow RenderWindow, Func<Matrix3> Get_Transform_Matrix, bool FixToScreen)
         {
+            this.RenderWindow = RenderWindow;
             // attach events
-            EventManager.MouseDown += OnMouseDown;
-            EventManager.MouseUp += OnMouseUp;
+            RenderWindow.EventManager.MouseDown += OnMouseDown;
+            RenderWindow.EventManager.MouseUp += OnMouseUp;
 
             this.Get_Obj_Transform = Get_Transform_Matrix;
             this.FixToScreen = FixToScreen;
@@ -78,8 +81,8 @@ namespace GameObjects
 
             this.Click = () =>
             {
-                Time_Since_Last_Call = EventManager.System_Time - Time_of_Last_Call;
-                Time_of_Last_Call = EventManager.System_Time;
+                Time_Since_Last_Call = RenderWindow.EventManager.System_Time - Time_of_Last_Call;
+                Time_of_Last_Call = RenderWindow.EventManager.System_Time;
                 IsClicked = true;
             };
             this.UnClick = () => IsClicked = false;

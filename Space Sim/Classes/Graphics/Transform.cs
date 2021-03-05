@@ -25,10 +25,7 @@ namespace Graphics
                 Transform_Matrix.M11 = Scale.X * Rotation_Matrix.M11; Transform_Matrix.M12 = Scale.Y * Rotation_Matrix.M12;
                 Transform_Matrix.M21 = Scale.X * Rotation_Matrix.M21; Transform_Matrix.M22 = Scale.Y * Rotation_Matrix.M22;
             }
-            get
-            {
-                return rotation;
-            }
+            get => rotation;
         }
         /// <summary>
         /// the scale of this transform
@@ -41,10 +38,7 @@ namespace Graphics
                 Transform_Matrix.M11 = Scale.X * Rotation_Matrix.M11; Transform_Matrix.M12 = Scale.Y * Rotation_Matrix.M12;
                 Transform_Matrix.M21 = Scale.X * Rotation_Matrix.M21; Transform_Matrix.M22 = Scale.Y * Rotation_Matrix.M22;
             }
-            get
-            {
-                return scale;
-            }
+            get => scale;
         }
         /// <summary>
         /// the position of this transform
@@ -57,10 +51,7 @@ namespace Graphics
                 Transform_Matrix.M13 = Position.X;
                 Transform_Matrix.M23 = Position.Y;
             }
-            get
-            {
-                return position;
-            }
+            get => position;
         }
 
         public Transform(float rotation, Vector2 scale, Vector2 position)

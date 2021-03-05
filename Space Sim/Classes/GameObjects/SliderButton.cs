@@ -27,7 +27,7 @@ namespace GameObjects
 
         
 
-        public SliderButton(Vector2 Position, Vector2 Scale) : base(SquareMesh, "Default", "SliderButton")
+        public SliderButton(RenderWindow RenderWindow, Vector2 Position, Vector2 Scale) : base(RenderWindow, SquareMesh, "Default", "SliderButton")
         {
             IconTexture = "Textures/Button textures/Button_Slider.png";
             SliderTexture = "Textures/Button textures/Button_SliderScale.png";
@@ -35,7 +35,7 @@ namespace GameObjects
             // pass in uniforms
             ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "transform", new DeepCopy<Matrix3>(() => Transform_Matrix)));
             ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "camera", () => RenderWindow.Camera.Transform_Matrix));
-            ShaderProgram.AddUniform(new FloatUniform(ShaderTarget.Both, "Time", () => EventManager.Program_Time));
+            ShaderProgram.AddUniform(new FloatUniform(ShaderTarget.Both, "Time", () => RenderWindow.EventManager.Program_Time));
 
             ShaderProgram.AddUniform(new FloatUniform(ShaderTarget.Fragment, "Percentage", new DeepCopy<float>(() => Percentage)));
             ShaderProgram.AddUniform(new FloatUniform(ShaderTarget.Fragment, "XYratio", new DeepCopy<float>(() => Scale.X / Scale.Y)));
@@ -51,13 +51,13 @@ namespace GameObjects
             this.Scale = Scale;
             FixToScreen = true;
 
-            clickbox = new ClickBox(new Vector2[] { new Vector2(-0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, -0.5f), new Vector2(-0.5f, -0.5f) }, MouseButton.Button1, true, () => Transform_Matrix);
+            clickbox = new ClickBox(RenderWindow, new Vector2[] { new Vector2(-0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, -0.5f), new Vector2(-0.5f, -0.5f) }, MouseButton.Button1, true, () => Transform_Matrix);
 
             clickbox.Click += () => {
-                EventManager.MouseMove += Move_Slider;
+                RenderWindow.EventManager.MouseMove += Move_Slider;
             };
             clickbox.UnClick += () => {
-                EventManager.MouseMove -= Move_Slider;
+                RenderWindow.EventManager.MouseMove -= Move_Slider;
             };            
         }
         private void Move_Slider(MouseState MS, MouseMoveEventArgs e)

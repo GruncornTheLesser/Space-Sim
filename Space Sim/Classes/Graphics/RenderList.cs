@@ -14,11 +14,11 @@ namespace Graphics
     /// </summary>
     class RenderList : IEnumerable<RenderObject2D>
     {
-        private static List<RenderObject2D> ObjectPool = new List<RenderObject2D>();
-        public static int Count => ObjectPool.Count;
+        private List<RenderObject2D> ObjectPool = new List<RenderObject2D>();
+        public int Count => ObjectPool.Count;
 
         // adds object to render list.
-        public static void Add(RenderObject2D item)
+        public void Add(RenderObject2D item)
         {
             ObjectPool.Add(item);
             item.Set_Z_Index += QuickSort;
@@ -26,7 +26,7 @@ namespace Graphics
 
         }
         // removes object from render list.
-        public static void Remove(RenderObject2D item)
+        public void Remove(RenderObject2D item)
         {
             item.Set_Z_Index -= QuickSort;
             ObjectPool.Remove(item);
@@ -37,14 +37,14 @@ namespace Graphics
         /// used for Z index changed calls
         /// </summary>
         /// <param name="NewZ"></param>
-        private static void QuickSort(int NewZ) => QuickSort(0, Count - 1);
+        private void QuickSort(int NewZ) => QuickSort(0, Count - 1);
 
         /// <summary>
         /// quick sort with last index's value as pivot.
         /// </summary>
         /// <param name="Left">The left bound index(inclusive)</param>
         /// <param name="Right">The right bound (exclusive)</param>
-        private static void QuickSort(int Left, int Right)
+        private void QuickSort(int Left, int Right)
         {
             if (Left >= Right) return;
             else 
@@ -62,7 +62,7 @@ namespace Graphics
         /// <param name="Left">The left bound index(inclusive).</param>
         /// <param name="Right">The right bound (exclusive).</param>
         /// <returns></returns>
-        private static int QuickSortPartition(int Left, int Right)
+        private int QuickSortPartition(int Left, int Right)
         {
             int pivot = ObjectPool[Right].Z_index; // take pivot point
 
@@ -89,7 +89,7 @@ namespace Graphics
         /// </summary>
         /// <param name="a">1st index to swap.</param>
         /// <param name="b">2nd index to swap.</param>
-        private static void Swap(int a, int b)
+        private void Swap(int a, int b)
         {
             RenderObject2D tempb = ObjectPool[a];
             ObjectPool[a] = ObjectPool[b];

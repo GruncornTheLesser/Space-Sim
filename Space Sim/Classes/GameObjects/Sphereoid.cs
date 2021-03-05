@@ -21,6 +21,8 @@ namespace GameObjects
         protected string TexturePath;
         private ClickBox clickbox;
 
+
+
         #region Lighting Fields and Properties
         protected Vector3 LightingDirection
         {
@@ -47,6 +49,8 @@ namespace GameObjects
 
         #endregion
 
+
+
         #region Rotation Fields and Properties
         /// <summary>
         /// X, Y, Z rotation of planet. Y first then Z, X
@@ -65,6 +69,8 @@ namespace GameObjects
 
         #endregion
 
+
+
         #region Enlarging Fields and Properties
         public bool Enlarged
         {
@@ -79,6 +85,8 @@ namespace GameObjects
         private bool enlarged = false;
         public float enlargedSF = 800;
         #endregion
+
+
 
         #region Fixed Position Fields and Properties
         
@@ -112,9 +120,9 @@ namespace GameObjects
         /// <param name="Velocity"></param>
         /// <param name="VertShader"></param>
         /// <param name="FragShader"></param>
-        public Sphereoid(Vector2 Scale, Vector2 Position, double Mass, Vector2d Velocity, string VertShader, string FragShader) : base(Scale, Position, Mass, Velocity, VertShader, FragShader)
+        public Sphereoid(RenderWindow RenderWindow, Vector2 Scale, Vector2 Position, double Mass, Vector2d Velocity, string VertShader, string FragShader) : base(RenderWindow, Scale, Position, Mass, Velocity, VertShader, FragShader)
         {
-            EventManager.Program_Process += OnProgramProcess;
+            RenderWindow.EventManager.Program_Process += OnProgramProcess;
 
             SunLighting = () =>
             {
@@ -123,7 +131,7 @@ namespace GameObjects
             };
             DirectionalLighting = true;
 
-            clickbox = new ClickBox(() => Transform_Matrix, this.FixToScreen);
+            clickbox = new ClickBox(RenderWindow, () => Transform_Matrix, this.FixToScreen);
             clickbox.Click += () =>
             {
                 if (clickbox.Time_Since_Last_Call < 0.5f) // if double click less than 0.5 seconds
@@ -141,9 +149,9 @@ namespace GameObjects
         /// <param name="Mass"></param>
         /// <param name="Velocity"></param>
         /// <param name="TexturePath"></param>
-        public Sphereoid(Vector2 Scale, Vector2 Position, double Mass, Vector2d Velocity, string TexturePath) : base(Scale, Position, Mass, Velocity, "Default", "Planet")
+        public Sphereoid(RenderWindow RenderWindow, Vector2 Scale, Vector2 Position, double Mass, Vector2d Velocity, string TexturePath) : base(RenderWindow, Scale, Position, Mass, Velocity, "Default", "Planet")
         {
-            EventManager.Program_Process += OnProgramProcess;
+            RenderWindow.EventManager.Program_Process += OnProgramProcess;
             this.TexturePath = TexturePath;
 
             SunLighting = () =>
@@ -166,7 +174,7 @@ namespace GameObjects
             ShaderProgram.AddUniform(new BoolUniform(ShaderTarget.Fragment, "DoLighting", () => true));
             ShaderProgram.CompileProgram();
 
-            clickbox = new ClickBox(() => Transform_Matrix, this.FixToScreen);
+            clickbox = new ClickBox(RenderWindow, () => Transform_Matrix, this.FixToScreen);
             clickbox.Click += () =>
             {
                 if (clickbox.Time_Since_Last_Call < 0.5f) // if double click less than 0.5 seconds
@@ -190,14 +198,14 @@ namespace GameObjects
         }
         private void StopFollow()
         {
-            EventManager.Program_Process -= CameraFollow; // remove follow functions -> it wont follow on process
-            EventManager.MouseDown -= StopWithButtonFollow; // remove stop follow function -> it wont stop following when click
+            RenderWindow.EventManager.Program_Process -= CameraFollow; // remove follow functions -> it wont follow on process
+            RenderWindow.EventManager.MouseDown -= StopWithButtonFollow; // remove stop follow function -> it wont stop following when click
             SpaceSimWindow.HomeButton.Release -= StopFollow;
         }
         protected void StartFollow()
         {
-            EventManager.Program_Process += CameraFollow; // every frame set camera world position to this planets position
-            EventManager.MouseDown += StopWithButtonFollow; // if click again stop following
+            RenderWindow.EventManager.Program_Process += CameraFollow; // every frame set camera world position to this planets position
+            RenderWindow.EventManager.MouseDown += StopWithButtonFollow; // if click again stop following
             SpaceSimWindow.HomeButton.Release += StopFollow;
         }
         #endregion
@@ -212,11 +220,11 @@ namespace GameObjects
         /// <param name="Texture"></param>
         /// <param name="TextureRes"></param>
         /// <returns></returns>
-        public Sphereoid AddSatellite(float SatelliteDiameter, double Mass, float OrbitRadius, string TextureRes, string Texture) => new Sphereoid(new Vector2(SatelliteDiameter), this.Position + new Vector2(OrbitRadius, 0), Mass, this.Velocity + new Vector2d(0, Math.Sqrt(G * this.Mass / OrbitRadius)), $"Textures/{TextureRes}/{Texture}");
+        public Sphereoid AddSatellite(float SatelliteDiameter, double Mass, float OrbitRadius, string TextureRes, string Texture) => new Sphereoid(RenderWindow, new Vector2(SatelliteDiameter), this.Position + new Vector2(OrbitRadius, 0), Mass, this.Velocity + new Vector2d(0, Math.Sqrt(G * this.Mass / OrbitRadius)), $"Textures/{TextureRes}/{Texture}");
         /// <summary>
         /// Adds ring to this sphereoid.
         /// </summary>        
-        public void AddRing() => new Ring(() => Position, () => LightingDirection);
+        public void AddRing() => new Ring(RenderWindow, () => Transform_Matrix, () => LightingDirection);
         #endregion
 
         protected void OnProgramProcess(float delta) => SphereRotation = new Vector3(SphereRotation.X, SphereRotation.Y + delta / 24 / 3600, SphereRotation.Z);
@@ -227,7 +235,7 @@ namespace GameObjects
     // 1 pixel = 1 000 000m = 6.68459e-6 AU
     class Sun : Sphereoid
     {
-        public Sun(string TextureRes) : base(new Vector2(1.39e3f), Vector2.Zero, 1.99e30, Vector2.Zero, "Textures/" + TextureRes + "sun.png")
+        public Sun(RenderWindow RenderWindow, string TextureRes) : base(RenderWindow, new Vector2(1.39e3f), Vector2.Zero, 1.99e30, Vector2.Zero, "Textures/" + TextureRes + "sun.png")
         {
             this.FixedPosition = true;
             this.DirectionalLighting = false;
@@ -237,11 +245,11 @@ namespace GameObjects
     }
     class Earth : Sphereoid
     {
-        public Earth(string TextureRes) :   base(new Vector2(1.28e1f), new Vector2(1.47e5f, 0), 5.97e24, new Vector2(0, 0.03f), "Default", "Earth") 
+        public Earth(RenderWindow RenderWindow, string TextureRes) :   base(RenderWindow, new Vector2(1.28e1f), new Vector2(1.47e5f, 0), 5.97e24, new Vector2(0, 0.03f), "Default", "Earth") 
         {
             ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "transform", new DeepCopy<Matrix3>(() => Transform_Matrix)));
             ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "camera", () => RenderWindow.Camera.Transform_Matrix));
-            ShaderProgram.AddUniform(new FloatUniform(ShaderTarget.Both, "Time", () => EventManager.Program_Time));
+            ShaderProgram.AddUniform(new FloatUniform(ShaderTarget.Both, "Time", () => RenderWindow.EventManager.Program_Time));
 
             SphereRotation = new Vector3(-3.14f / 2, 0, 0.3926875f);
 
@@ -263,15 +271,13 @@ namespace GameObjects
     class Ring : RenderObject2D
     {
         Func<Vector3> GetLightingDir;
-        Func<Vector2> GetPosition;
-        public Ring(Func<Vector2> GetPosition, Func<Vector3> GetLightingDir) : base(SquareMesh, "Default", "PlanetRing")
+        public Ring(RenderWindow RenderWindow, Func<Matrix3> GetTransform, Func<Vector3> GetLightingDir) : base(RenderWindow, SquareMesh, "Default", "PlanetRing")
         {
             this.GetLightingDir = GetLightingDir;
-            this.GetPosition = GetPosition;
 
             ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "transform", () => this.Transform_Matrix));
             ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "camera", () => RenderWindow.Camera.Transform_Matrix));
-            ShaderProgram.AddUniform(new TextureUniform(ShaderTarget.Fragment, "Texture", () => 0));
+            //ShaderProgram.AddUniform(new TextureUniform(ShaderTarget.Fragment, "Texture", () => TextureManager.Get("Textures/512 planet textures/Ring.png")));
             ShaderProgram.CompileProgram();
         }
     }
@@ -280,7 +286,7 @@ namespace GameObjects
     {
         
         private ClickBox clickbox;
-        public Rocket(Vector2 Position, Vector2d Velocity) : base(new Vector2(250), Position, 1.42e12, Velocity, "Default", "Rocket") 
+        public Rocket(RenderWindow RenderWindow, Vector2 Position, Vector2d Velocity) : base(RenderWindow, new Vector2(250), Position, 1.42e12, Velocity, "Default", "Default") 
         {
             ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "transform", new DeepCopy<Matrix3>(() => Transform_Matrix)));
             ShaderProgram.AddUniform(new Mat3Uniform(ShaderTarget.Vertex, "camera", () => RenderWindow.Camera.Transform_Matrix));
@@ -289,7 +295,7 @@ namespace GameObjects
 
             
 
-            clickbox = new ClickBox(() => Transform_Matrix, this.FixToScreen);
+            clickbox = new ClickBox(RenderWindow, () => Transform_Matrix, this.FixToScreen);
             clickbox.Click += () =>
             {
                 if (clickbox.Time_Since_Last_Call < 0.5f) // if double click less than 0.5 seconds
@@ -309,14 +315,14 @@ namespace GameObjects
         }
         private void StopFollow()
         {
-            EventManager.Program_Process -= CameraFollow; // remove follow functions -> it wont follow on process
-            EventManager.MouseDown -= StopWithButtonFollow; // remove stop follow function -> it wont stop following when click
+            RenderWindow.EventManager.Program_Process -= CameraFollow; // remove follow functions -> it wont follow on process
+            RenderWindow.EventManager.MouseDown -= StopWithButtonFollow; // remove stop follow function -> it wont stop following when click
             SpaceSimWindow.HomeButton.Release -= StopFollow;
         }
         protected void StartFollow()
         {
-            EventManager.Program_Process += CameraFollow; // every frame set camera world position to this planets position
-            EventManager.MouseDown += StopWithButtonFollow; // if click again stop following
+            RenderWindow.EventManager.Program_Process += CameraFollow; // every frame set camera world position to this planets position
+            RenderWindow.EventManager.MouseDown += StopWithButtonFollow; // if click again stop following
             SpaceSimWindow.HomeButton.Release += StopFollow;
         }
         #endregion

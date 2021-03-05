@@ -14,7 +14,7 @@ namespace GameObjects
         
         
 
-        public PointMass(Vector2 Scale, Vector2 Position, double Mass, Vector2d Velocity, string VertShader, string FragShader) : base(SquareMesh, VertShader, FragShader)
+        public PointMass(RenderWindow RenderWindow, Vector2 Scale, Vector2 Position, double Mass, Vector2d Velocity, string VertShader, string FragShader) : base(RenderWindow, SquareMesh, VertShader, FragShader)
         {
             SpaceSimWindow.UpdatePosition += OnUpdatePosition;
             SpaceSimWindow.QuadTree.Add(this);
@@ -25,7 +25,7 @@ namespace GameObjects
             this.Mass = Mass;
             this.Velocity = Velocity;
             this.Z_index = 3;
-            this.Trail = new Trail(1000, 0, () => this.Position, Color4.White);
+            this.Trail = new Trail(RenderWindow, 1000, 0, () => this.Position, Color4.White);
         }
 
 

@@ -6,45 +6,56 @@ using OpenTK.Mathematics;
 
 namespace  Graphics
 {
-    public static class EventManager
+    public class EventManager
     {
-        internal static float Program_Speed = 0;
-        internal static float Program_Time = 0;
-        internal static float System_Time = 0;
+        internal float Program_Speed = 0;
+        internal float Program_Time = 0;
+        internal float System_Time = 0;
 
         /// <summary>
         /// called when a button is pressed.
         /// </summary>
-        internal static Action<MouseState, MouseButtonEventArgs> MouseDown = (M, e) => { };
+        internal Action<MouseState, MouseButtonEventArgs> MouseDown;
         /// <summary>
         /// called when a button is released.
         /// </summary>
-        internal static Action<MouseState, MouseButtonEventArgs> MouseUp = (M, e) => { };
+        internal Action<MouseState, MouseButtonEventArgs> MouseUp;
         /// <summary>
         /// called when the mouse whee scrolls.
         /// </summary>
-        internal static Action<MouseState, MouseWheelEventArgs> MouseWheel = (M, e) => { };
+        internal Action<MouseState, MouseWheelEventArgs> MouseWheel;
         /// <summary>
         /// called when the mouse is moved.
         /// </summary>
-        internal static Action<MouseState, MouseMoveEventArgs> MouseMove = (M, e) => { };
+        internal Action<MouseState, MouseMoveEventArgs> MouseMove;
         /// <summary>
         /// called when the window size is changed
         /// </summary>
-        internal static Action<Vector2> WindowResize = (Size) => { };
+        internal Action<Vector2> WindowResize;
         /// <summary>
         /// Called every frame before rendering. delta is time passed since last process in program time.
         /// </summary>
-        internal static Action<float> Program_Process = (delta) => { };
+        internal Action<float> Program_Process;
         /// <summary>
         /// Called every frame before rendering. delta is time passed since last process in system time.
         /// </summary>
-        internal static Action<float> System_Process = (delta) =>
+        internal Action<float> System_Process;
+
+        public EventManager()
         {
-            System_Time += delta;
-            Program_Time += delta * Program_Speed;
-            Program_Process(delta * Program_Speed);
-        };
+            MouseDown = (M, e) => { };
+            MouseUp = (M, e) => { };
+            MouseMove = (M, e) => { };
+            MouseWheel = (M, e) => { };
+            WindowResize = (Size) => { };
+            Program_Process = (delta) => { };
+            System_Process = (delta) =>
+            {
+                System_Time += delta;
+                Program_Time += delta * Program_Speed;
+                Program_Process(delta * Program_Speed);
+            };
+        }
 
     }
 }

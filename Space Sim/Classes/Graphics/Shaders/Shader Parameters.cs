@@ -1,16 +1,9 @@
 ﻿using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using System;
-using Graphics;
 
 namespace Graphics.Shaders
 {
-
-
-    /* THING TO DO:
-     * Make texture Uniform a string instead of an int. -> ready for future optimisations of Texture Manager
-     */
-
     /// <summary>
     /// which shader is this parameter going to
     /// </summary>

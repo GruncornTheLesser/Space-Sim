@@ -2,63 +2,6 @@
 using OpenTK.Mathematics;
 using OpenTK.Graphics.OpenGL4;
 using Graphics.Shaders;
-using System.Reflection;
-using System.Runtime.Remoting;
-
-/* OpenGL Hardware Pipeline
-* ====================CPU====================
-* yo OpenGL, go draw this cool stuff.
-*                      V
-* ====================GPU====================
-* Vertex Shader - code to animate and position each vertex
-*                      V
-[X]Tesselation Control (optional) - specify how many vertices to generate
-*                      V
-[X]Tesselation (optional) - generate vertices
-*                      V
-[X]Tesselation Evaluation Shader (optional) position new vertices
-*                      V
-[X]Geometry Shader (optional) - generate or delete geometry
-*                      V
-* Clipping - remove stuff thats out of frame
-*                      V
-* Rasterization - primitive triangles are turned into 2d bitmap of pixels
-*      V
-* Fragment Shader - code to colour each pixel
-*                      V
-[~] Blending - overlapping pixels are blended into 1
-*                      V
-[~] Frame Buffer - loads 2d image into frame buffer
-* ==================RETURN===================
-[X] means not doing it
-[~] means its done by openGl 
-*/
-
-/* A Handle is a pointer for openGL. i kept the name because it made it simpler for me to understand.
- * 
- * managed vs unmanaged code:
- * managed code is executed with CLR which is responsible for managing memory, performing type verification and garbage collection
- * unmanaged code is executed outside CLR
- * unmanaged code is declared with the unsafe keyword
- */
-
-/* it means the programmer must:
- * make sure the casting is done right
- * calling the memory allocation function
- * making sure the memory is released when the work is done
- */
-
-/* fixed:
- * a fixed statement can be applied to a pointer which means the CLR garbage collector ignores the pointer
- * I think it still overwrites the value.
- */
-
-
-/* THING TO DO:
- * capabilty to set individual vertice and use BufferSubData -> means it doesnt need to create a new Buffer each time
- * Hide Object
- */
-
 
 namespace Graphics
 {
@@ -68,13 +11,14 @@ namespace Graphics
     /// </summary>
     abstract class RenderObject2D : Transform
     {
+        protected RenderWindow RenderWindow;
         #region OpenGLHandles
         /// <summary>
         /// a vertex array object is an object that contains one or more vertex buffer objects and is designed to store vertice information. This means the vertex attributes have been given 'locations', among other things, for identifcation.
         /// </summary>
         private readonly int VertexArrayHandle; // vertex array object handle
         
-        
+
         
         /// <summary>
         /// the raw data of the vertices streamed into a float buffer. The vertices havent been identified.
@@ -171,14 +115,15 @@ namespace Graphics
         /// <param name="Vertices">The vertex array.</param>
         /// <param name="VertexShader">the file path to the vertex shader code</param>
         /// <param name="FragmentShader">the file path to the fragment shader code</param>
-        public RenderObject2D(Vertex2D[] Vertices, string VertexShader, string FragmentShader) : base(0, 1, 1, 0, 0)
+        public RenderObject2D(RenderWindow RenderWindow, Vertex2D[] Vertices, string VertexShader, string FragmentShader) : base(0, 1, 1, 0, 0)
         {
+            this.RenderWindow = RenderWindow;
             Set_Z_Index = value => z_index = value;
             Set_visible = (value) =>
             {
                 visible = value;
-                if (visible) RenderList.Add(this);
-                else RenderList.Remove(this);
+                if (visible) RenderWindow.RenderList.Add(this);
+                else RenderWindow.RenderList.Remove(this);
             };
             Visible = true;
 
@@ -199,8 +144,8 @@ namespace Graphics
             Set_visible = (value) =>
             {
                 visible = value;
-                if (visible) RenderList.Add(this);
-                else RenderList.Remove(this);
+                if (visible) RenderWindow.RenderList.Add(this);
+                else RenderWindow.RenderList.Remove(this);
             };
             Visible = true;
 
@@ -208,18 +153,7 @@ namespace Graphics
             // initiate the shader program with the default shaders
             ShaderProgram = new ShaderProgram("Default", "Default");
 
-            // create default square for vertices
-            Vertex2D[] Square = new Vertex2D[6] {
-                new Vertex2D(-1, 1, 0, 0, 1, 1, 1, 1),
-                new Vertex2D(-1,-1, 0, 1, 1, 1, 1, 1),
-                new Vertex2D( 1,-1, 1, 1, 1, 1, 1, 1),
-
-                new Vertex2D( 1,-1, 1, 1, 1, 1, 1, 1),
-                new Vertex2D(-1, 1, 0, 0, 1, 1, 1, 1),
-                new Vertex2D( 1, 1, 1, 0, 1, 1, 1, 1),
-                };
-
-            Init_BufferArray(out VertexArrayHandle, out VertexBufferHandle, Square);
+            Init_BufferArray(out VertexArrayHandle, out VertexBufferHandle, SquareMesh);
             
             // shader uniforms added in derived object
         }
