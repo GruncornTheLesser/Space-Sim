@@ -7,6 +7,7 @@ namespace GameObjects
     abstract class PointMass : RenderObject2D
     {
         protected const double G = 6.67e-11 * 1e-12 * 1e-6; // m^3⋅kg^−1⋅s^−2 1 pixel = 1 000 km so r^-2 means (1e6)^-2 to get to 1m for calculations, then to convert back down another 1e-6
+        protected SpaceSimWindow SimWin;
         public double Mass;
         public Vector2d Velocity;
 
@@ -14,10 +15,11 @@ namespace GameObjects
         
         
 
-        public PointMass(RenderWindow RenderWindow, Vector2 Scale, Vector2 Position, double Mass, Vector2d Velocity, string VertShader, string FragShader) : base(RenderWindow, SquareMesh, VertShader, FragShader)
+        public PointMass(SpaceSimWindow Sim, RenderWindow Window, Vector2 Scale, Vector2 Position, double Mass, Vector2d Velocity, string VertShader, string FragShader) : base(Window, SquareMesh, VertShader, FragShader)
         {
-            SpaceSimWindow.UpdatePosition += OnUpdatePosition;
-            SpaceSimWindow.QuadTree.Add(this);
+            SimWin = Sim;
+            SimWin.UpdatePosition += OnUpdatePosition;
+            SimWin.QuadTree.Add(this);
             Set_visible += (value) => Trail.Visible = value;
 
             this.Scale = Scale;

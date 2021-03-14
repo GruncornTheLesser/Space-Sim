@@ -2,6 +2,7 @@
 using OpenTK.Mathematics;
 using OpenTK.Graphics.OpenGL4;
 using Graphics.Shaders;
+using System.Reflection;
 
 namespace Graphics
 {
@@ -95,7 +96,7 @@ namespace Graphics
 
         #endregion
 
-        protected static readonly Vertex2D[] SquareMesh = new Vertex2D[6] {
+        public static readonly Vertex2D[] SquareMesh = new Vertex2D[6] {
             new Vertex2D(-0.5f, 0.5f, 0, 0, 1, 1, 1, 1),
             new Vertex2D(-0.5f,-0.5f, 0, 1, 1, 1, 1, 1),
             new Vertex2D( 0.5f,-0.5f, 1, 1, 1, 1, 1, 1),
@@ -125,6 +126,7 @@ namespace Graphics
                 if (visible) RenderWindow.RenderList.Add(this);
                 else RenderWindow.RenderList.Remove(this);
             };
+
             Visible = true;
 
             // initiate the shader program with the file paths to the shaders
@@ -201,6 +203,8 @@ namespace Graphics
             /*
              * This works but is unneccessary as right now render object is non generic class and always uses vertex2D
              * If i were to change this i would use this
+             * 
+             */
             foreach(FieldInfo Field in new Vertex2D().GetType().GetFields())
             {
                 switch (Field.FieldType.ToString())
@@ -215,11 +219,11 @@ namespace Graphics
                     default: throw new Exception(Field.FieldType.ToString());
                 }
             }
-            */
+            
 
-            LoadBufferAttribute<Vector2>(ref Location, ref ByteOffset, ArrayHandle, "VertUV");
-            LoadBufferAttribute<Vector2>(ref Location, ref ByteOffset, ArrayHandle, "TextureUV");
-            LoadBufferAttribute<Vector4>(ref Location, ref ByteOffset, ArrayHandle, "VertColour");
+            //LoadBufferAttribute<Vector2>(ref Location, ref ByteOffset, ArrayHandle, "VertUV");
+            //LoadBufferAttribute<Vector2>(ref Location, ref ByteOffset, ArrayHandle, "TextureUV");
+            //LoadBufferAttribute<Vector4>(ref Location, ref ByteOffset, ArrayHandle, "VertColour");
             
             BufferHandle = GL.GenBuffer(); // generates and binds vertex buffer object
             GL.BindBuffer(BufferTarget.ArrayBuffer, BufferHandle); // uses this buffer
@@ -227,6 +231,7 @@ namespace Graphics
             GL.VertexArrayVertexBuffer(ArrayHandle, 0, BufferHandle, IntPtr.Zero, Vertex2D.SizeInBytes); // assigns vertice data
 
             this.VertexArray = Vertices; // sets array attribute to use buffers after buffer has been set
+            
         }
         #endregion
 

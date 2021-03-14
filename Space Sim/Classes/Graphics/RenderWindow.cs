@@ -5,7 +5,7 @@ using OpenTK.Windowing.Common;
 using OpenTK.Mathematics;
 namespace Graphics
 {    
-    public abstract class RenderWindow : GameWindow
+    public class RenderWindow : GameWindow
     {
         protected Color4 RefreshCol = new Color4(0.01f, 0.01f, 0.1f, 1.0f);
         internal RenderCamera Camera; // static for easy access. -> means only 1 window can exist at 1 time.
@@ -15,6 +15,8 @@ namespace Graphics
         public RenderWindow(GameWindowSettings GWS, NativeWindowSettings NWS) : base(GWS, NWS)
         {
             RenderList = new RenderList();
+            EventManager = new EventManager();
+            Camera = new RenderCamera(EventManager, this.Size, 1);
             GL.ClearColor(RefreshCol);
             this.VSync = VSyncMode.On;
         }
@@ -33,22 +35,7 @@ namespace Graphics
         }
         protected override void OnRenderFrame(FrameEventArgs e)
         {
-            /*
-            Title =
-                $"MousePos: " +
-                $"{MathF.Round(MouseState.Position.X, 2)}," +
-                $"{MathF.Round(MouseState.Position.Y, 2)} " +
-
-                $"MouseScreenPos: " +
-                $"{MathF.Round(MouseToScreen(MouseState.Position).X, 2)}," +
-                $"{MathF.Round(MouseToScreen(MouseState.Position).Y, 2)} " +
-
-                $"MouseWorldPos: " +
-                $"{MathF.Round(MouseToWorld(MouseState.Position).X, 2)}," +
-                $"{MathF.Round(MouseToWorld(MouseState.Position).Y, 2)} " +
-
-                $"FPS: {1 / e.Time : 0} ";
-            */
+            
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit); // clear last frame
 
             // call Process events

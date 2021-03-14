@@ -37,7 +37,7 @@ void main(void)
 		
 		// dot product normal and light direction * texture colour
 		float brightness = max(0.05, dot(normal, normalize(lightDir)));
-		Colour = vec4(Lerp(DayCol, NightCol * dot(normal, vec3(0, 0, 1)), brightness), 1);
+		Colour = vec4(Lerp(DayCol, NightCol * (1 - brightness), brightness), 1);
 	}
 }
 

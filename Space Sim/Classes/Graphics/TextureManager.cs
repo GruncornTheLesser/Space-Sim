@@ -20,6 +20,7 @@ namespace Graphics
                 int NewTexture = Init_Textures(path);
                 _TextureDict[path] = NewTexture;
                 return NewTexture;
+                
             }
         }
         /// <summary>
@@ -60,7 +61,7 @@ namespace Graphics
         /// <returns>The serialised data read from the file in rgba format.</returns>
         private static float[] Load_Texture(out int width, out int height, string path)
         {
-            Bitmap BMP = (Bitmap)System.Drawing.Image.FromFile(path);
+            Bitmap BMP = (Bitmap)Image.FromFile(path);
             width = BMP.Width;
             height = BMP.Height;
             float[] Serialized_Data = new float[width * height * 4];

@@ -8,25 +8,22 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 namespace GameObjects
 {
 
-    /* THING TO DO:
-     * saturn rings
-     */
     public class SpaceSimWindow : RenderWindow
     {
-        private static string TextureRes = "512 planet textures/";
-        internal static BarnesHut QuadTree = new BarnesHut(new Vector2(-1e7f), new Vector2(1e7f));
+        private string TextureRes = "512 planet textures/";
+        internal BarnesHut QuadTree = new BarnesHut(new Vector2(-1e7f), new Vector2(1e7f));
 
-        internal static PressButton HomeButton;
+        internal PressButton HomeButton;
         private PressButton ReScaleButton;
         private PressButton LightingButton;
         private SliderButton TimeSlider;
         private SliderButton AccuSlider;
 
-        internal static Action<float> UpdatePosition = (delta) => { };
+        internal Action<float> UpdatePosition = (delta) => { };
 
-        internal static Sphereoid sun;
+        internal Sphereoid sun;
 
-        private static Vector2 RocketStartPosition;
+        private Vector2 RocketStartPosition;
 
         public SpaceSimWindow(GameWindowSettings GWS, NativeWindowSettings NWS) : base(GWS, NWS)
         {
@@ -85,7 +82,7 @@ namespace GameObjects
                 uranus.DirectionalLighting = !uranus.DirectionalLighting;
                 neptune.DirectionalLighting = !neptune.DirectionalLighting;
             };
-            TimeSlider.Set_Percentage = (new_P) => EventManager.Program_Speed = new_P * 24 * 3600 * 365; // 1 year per second
+            TimeSlider.Set_Percentage = (new_P) => EventManager.Program_Speed = new_P * 24 * 3600 * 365.5f; // 1 year per second
             TimeSlider.Percentage = 0.00f;
         }
 
@@ -103,27 +100,26 @@ namespace GameObjects
             if (e.Button == MouseButton.Button2)
             {
                 PointMass P = new Rocket(this, RocketStartPosition, (RocketStartPosition - MouseToWorld(m.Position)) * 5e-7f);
-                EventManager.Program_Speed = TimeSlider.Percentage * 24 * 3600 * 365;
+                EventManager.Program_Speed = TimeSlider.Percentage * 24 * 3600 * 365.25f;
             }
         }
 
+        float deltaOverflow = 0;
         private void EvolveSimulation(float delta)
         {
-            int MaxStep = 3600 * 24; // 1 day
+            delta += deltaOverflow;
+            const int MaxStep = 3600 * 24; // 1 day
             // Max step is the maximum length of time passed before an update. if (delta > MaxStep) Evolve the simulation by 
 
             // if delta > TimeStep, repeat Timesteps until delta time passed
             while (delta > MaxStep)
             {
                 delta -= MaxStep;
-                QuadTree.Evolve(delta, AccuSlider.Percentage);
-                UpdatePosition(delta);
+                QuadTree.Evolve(MaxStep, AccuSlider.Percentage); //BruteForce(MaxStep); //
+                UpdatePosition(MaxStep);
             }
-            if (delta != 0) QuadTree.Evolve(delta, AccuSlider.Percentage);
-            UpdatePosition(delta);
 
-            //(2.65313411713586E-08, 0) -> BarnesHut θ = 0
-            //(2.65313411713586E-08, 0) -> BruteForce 
+            deltaOverflow = delta;
         }
         private void BruteForce(float delta)
         {
@@ -137,8 +133,6 @@ namespace GameObjects
                 }
                 P1.Velocity += Acc * delta;
             }
-
-            UpdatePosition(delta);
         }
         
     }

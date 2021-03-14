@@ -222,8 +222,6 @@ namespace Graphics.Shaders
                 // generate uniform definitions
                 foreach (string name in UniformTextures.Keys) code += UniformTextures[name].VertDefinition(ref location);
                 foreach (string name in UniformParameters.Keys) code += UniformParameters[name].VertDefinition(ref location);
-                
-                //foreach (string name in UniformTextures.Keys) code += UniformTextures[name].VertDefinition(ref location);
             }
             else
             {

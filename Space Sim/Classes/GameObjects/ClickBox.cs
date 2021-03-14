@@ -107,7 +107,7 @@ namespace GameObjects
             bool AllPositive = true, AllNegative = true;
             for (int i = 0; i < HitBox.Length; i++)
             {
-                Vector2 V1 = HitBox[i % HitBox.Length]; // first vertex
+                Vector2 V1 = HitBox[i]; // first vertex
                 Vector2 V2 = HitBox[(i + 1) % HitBox.Length]; // second vertex
 
                 float D = cross(P, V1) + cross(V1, V2) + cross(V2, P); // the determinate of the triangle V1, V2, V3

@@ -73,7 +73,7 @@ namespace Graphics
         {
             Rotation_Matrix = Matrix2.CreateRotation(rotation);
             Transform_Matrix = new Matrix3(
-                    scale.X * Rotation_Matrix.M11, -scale.Y * Rotation_Matrix.M12, position.X,
+                    scale.X * Rotation_Matrix.M11,-scale.Y * Rotation_Matrix.M12, position.X,
                     scale.X * Rotation_Matrix.M21, scale.Y * Rotation_Matrix.M22, position.Y,
                     0, 0, 1 // this row doesnt change
                     );
